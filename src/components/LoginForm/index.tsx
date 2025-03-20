@@ -23,12 +23,17 @@ const LoginButton = styled(Button)`
   width: 100%;
 `;
 
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
 export const LoginForm: React.FC = () => {
   const dispatch = useAppDispatch();
   const { loading, error, isAuthenticated, user } = useAppSelector(state => state.auth);
   
-  const onFinish = (values: { email: string; password: string }) => {
-    dispatch(loginRequest(values));
+  const onFinish = (values: any) => {
+    dispatch(loginRequest(values as LoginFormValues));
   };
 
   return (

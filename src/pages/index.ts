@@ -1,5 +1,5 @@
-export { AboutUsPage } from './AboutUsPage';
-export { OurTeamsPage } from './OurTeamsPage';
-export { MarketplacePage } from './MarketplacePage';
-export { RoadmapPage } from './RoadmapPage';
-export { WhitepaperPage } from './WhitepaperPage'; 
+export { default as AboutUsPage } from './AboutUsPage';
+export { default as OurTeamsPage } from './OurTeamsPage';
+export { default as MarketplacePage } from './MarketplacePage';
+export { default as RoadmapPage } from './RoadmapPage';
+export { default as WhitepaperPage } from './WhitepaperPage'; 

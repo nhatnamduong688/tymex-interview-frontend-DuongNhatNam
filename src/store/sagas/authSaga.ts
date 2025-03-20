@@ -1,9 +1,10 @@
 import { takeLatest, put, call, delay } from 'redux-saga/effects';
 import { loginRequest, loginSuccess, loginFailure } from '../reducers/authReducer';
 import { PayloadAction } from '@reduxjs/toolkit';
+import { LoginCredentials } from '../reducers/authReducer';
 
 // Mô phỏng gọi API
-const mockLoginApi = async (credentials: { email: string; password: string }) => {
+const mockLoginApi = async (credentials: LoginCredentials) => {
   // Giả lập call API
   await new Promise(resolve => setTimeout(resolve, 1000));
   
@@ -21,7 +22,7 @@ const mockLoginApi = async (credentials: { email: string; password: string }) =>
 };
 
 // Saga worker
-function* loginSaga(action: PayloadAction<{ email: string; password: string }>) {
+function* loginSaga(action: PayloadAction<LoginCredentials>): Generator<any, void, any> {
   try {
     // Mô phỏng call API
     const user = yield call(mockLoginApi, action.payload);
