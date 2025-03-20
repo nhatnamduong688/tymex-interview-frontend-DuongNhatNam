@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { LoginForm } from '../../components/LoginForm';
 
 const Container = styled.div`
   min-height: 80vh;
@@ -9,7 +10,9 @@ const Container = styled.div`
 const AboutUsPage: React.FC = () => {
   return (
     <Container>
-      About Us Page
+      <h1>About Us Page</h1>
+      <p>This is a demo of Redux and Redux Saga integration.</p>
+      <LoginForm />
     </Container>
   );
 };
