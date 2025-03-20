@@ -1,10 +1,19 @@
-import { Grid } from 'antd'
+import { useEffect, useState } from 'react';
+import { Grid } from 'antd';
+
+const { useBreakpoint: useAntBreakpoint } = Grid;
 
 export const useBreakpoint = () => {
-  const breakpoints = Grid.useBreakpoint()
+  const screens = useAntBreakpoint();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    // Check if screen size is below lg breakpoint (992px)
+    setIsCollapsed(!screens.lg);
+  }, [screens]);
 
   return {
-    ...breakpoints,
-    isCollapsed: !breakpoints.xl,
-  }
-} 
+    screens,
+    isCollapsed,
+  };
+}; 

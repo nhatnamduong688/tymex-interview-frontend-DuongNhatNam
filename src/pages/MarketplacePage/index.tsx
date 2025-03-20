@@ -1,17 +1,15 @@
 import React from 'react';
 import styled from 'styled-components';
+import withPageLoading from "../../hoc/withPageLoading";
+import { MarketPlaceModule } from "../../modules/marketplace";
 
 const Container = styled.div`
   min-height: 80vh;
   padding: 100px 20px 20px;
 `;
 
-const MarketplacePage: React.FC = () => {
-  return (
-    <Container>
-      Marketplace Page
-    </Container>
-  );
-};
+function MarketplacePage() {
+  return <MarketPlaceModule />;
+}
 
-export default MarketplacePage; 
+export default withPageLoading(MarketplacePage); 
