@@ -3,6 +3,8 @@ import { Button, Drawer, Typography } from "antd";
 import { useState } from "react";
 import styled from "styled-components";
 import { useBreakpoint } from "../../../hooks/useBreakpoint";
+import { useTranslation } from "react-i18next";
+import { NavigationMenu } from "../../NavigationMenu";
 
 const StyledDrawer = styled(Drawer)`
   .ant-drawer-wrapper-body {
@@ -13,6 +15,10 @@ const StyledDrawer = styled(Drawer)`
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       
       .ant-drawer-header-title {
+        .ant-drawer-title {
+          color: white;
+        }
+        
         .ant-drawer-close {
           color: white;
         }
@@ -21,53 +27,6 @@ const StyledDrawer = styled(Drawer)`
     
     .ant-drawer-body {
       padding: 24px 0;
-    }
-  }
-`;
-
-const NavList = styled.ul`
-  list-style: none;
-  margin: 0;
-  padding: 0;
-`;
-
-const NavItem = styled.li`
-  margin-bottom: 20px;
-  
-  a {
-    display: block;
-    color: #fff;
-    text-decoration: none;
-    text-transform: uppercase;
-    font-weight: 600;
-    position: relative;
-    font-size: 18px;
-    padding: 12px 24px;
-    transition: all 125ms linear;
-
-    &:hover,
-    &:active {
-      color: ${props => props.theme.colors.primaryAccent};
-    }
-
-    &.active {
-      text-transform: uppercase;
-      background-image: ${props => props.theme.colors.primaryGradient};
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-family: 'Inter';
-      font-weight: 800;
-      font-size: 18px;
-
-      &::after {
-        content: '';
-        position: absolute;
-        left: 24px;
-        bottom: 5px;
-        height: 2px;
-        width: 16px;
-        background-image: ${props => props.theme.colors.primaryGradient};
-      }
     }
   }
 `;
@@ -84,6 +43,9 @@ const StyledMenuIcon = styled(MenuOutlined)`
 export const MobileNavigation = () => {
   // Hooks
   const { sm } = useBreakpoint();
+  const { t } = useTranslation();
+  
+  // States
   const [visible, setVisible] = useState<boolean>(false);
 
   // Logic handlers
@@ -107,26 +69,7 @@ export const MobileNavigation = () => {
         closable
         placement="left"
       >
-        <NavList>
-          <NavItem>
-            <a href="">Home</a>
-          </NavItem>
-          <NavItem>
-            <a href="">About Us</a>
-          </NavItem>
-          <NavItem>
-            <a href="">Our Teams</a>
-          </NavItem>
-          <NavItem>
-            <a className="active" href="">Marketplace</a>
-          </NavItem>
-          <NavItem>
-            <a href="">Roadmap</a>
-          </NavItem>
-          <NavItem>
-            <a href="">Whitepaper</a>
-          </NavItem>
-        </NavList>
+        <NavigationMenu mode="vertical" />
       </StyledDrawer>
     </Container>
   );

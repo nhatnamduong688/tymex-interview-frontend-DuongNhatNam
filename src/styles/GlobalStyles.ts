@@ -7,6 +7,8 @@ const GlobalStyles = createGlobalStyle`
     @media (max-width: 1200px) {
       --header-height: 64px;
     }
+    
+    font-size: 10px; /* Để 1rem = 10px, giúp tính toán dễ dàng */
   }
 
   body {

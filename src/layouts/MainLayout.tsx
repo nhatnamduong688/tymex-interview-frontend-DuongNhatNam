@@ -7,12 +7,12 @@ import { FooterLayout } from './FooterLayout';
 import { SeparateSection } from './SeparateSection';
 import styled from 'styled-components';
 
-const { Content } = Layout;
+const { Content, Sider } = Layout;
 
 const StyledLayout = styled(Layout)`
     min-height: 100vh;
     width: 100%;
-    background-image: url('/assets/images/background.png');
+    background-image: url('/assets/images/common/tymex-background.svg');
     background-size: auto;
     background-repeat: no-repeat;
     background-position: center center;
@@ -24,14 +24,15 @@ const StyledLayout = styled(Layout)`
 
 const StyledContent = styled(Content)`
     background: transparent;
+    padding-top: var(--header-height);
 `;
 
 export const MainLayout = () => {
     return (
-        <StyledLayout className="main-layout">
+        <StyledLayout className="main-layout min-h-screen w-full">
             <HeaderLayout />
             
-            <StyledContent>
+            <StyledContent className="bg-transparent">
                 {/* Content here by Outlet */}
                 <Outlet />
             </StyledContent>
