@@ -1,61 +1,43 @@
 // src/layouts/MainLayout.tsx
 import React from 'react';
-import { BannerSection } from '../components/BannerSection';
+import { Outlet } from 'react-router-dom';
+import { Layout } from 'antd';
 import { HeaderLayout } from './HeaderLayout';
 import { FooterLayout } from './FooterLayout';
+import { SeparateSection } from './SeparateSection';
 import styled from 'styled-components';
 
-interface MainLayoutProps {
-    children: React.ReactNode;
-}
+const { Content } = Layout;
 
-const LayoutContainer = styled.div`
-    display: flex;
-    flex-direction: column;
+const StyledLayout = styled(Layout)`
     min-height: 100vh;
+    width: 100%;
     background-image: url('/assets/images/background.png');
-    background-size: cover;
-    background-position: center;
+    background-size: auto;
     background-repeat: no-repeat;
-    position: relative;
-`;
-
-const MainContent = styled.main`
-    flex: 1;
-    width: 100%;
-`;
-
-const SectionFrame = styled.div`
-    width: 100%;
-    position: relative;
+    background-position: center center;
     
-    img {
-        width: 100%;
-        height: auto;
-        display: block;
+    .ant-layout-sider {
+        background: transparent !important;
     }
 `;
 
-export const MainLayout = ({ children }: MainLayoutProps) => {
+const StyledContent = styled(Content)`
+    background: transparent;
+`;
+
+export const MainLayout = () => {
     return (
-        <LayoutContainer>
+        <StyledLayout className="main-layout">
             <HeaderLayout />
             
-            <BannerSection />
+            <StyledContent>
+                {/* Content here by Outlet */}
+                <Outlet />
+            </StyledContent>
             
-            <MainContent>
-                {children}
-            </MainContent>
-            
-            <SectionFrame>
-                <img 
-                    src="/assets/images/section-frame.png" 
-                    alt="section-frame"
-                    loading="lazy"
-                />
-            </SectionFrame>
-            
+            <SeparateSection />
             <FooterLayout />
-        </LayoutContainer>
+        </StyledLayout>
     );
 };

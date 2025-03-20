@@ -1,10 +1,17 @@
 import { createGlobalStyle } from 'styled-components';
 
 const GlobalStyles = createGlobalStyle`
+  :root {
+    --header-height: 84px;
+    
+    @media (max-width: 1200px) {
+      --header-height: 64px;
+    }
+  }
+
   body {
     --primary-bg: ${props => props.theme.colors.primaryGradient};
     --secondary-color: ${props => props.theme.colors.secondary};
-    --header-height: ${props => props.theme.layout.headerHeight};
     --mobile-header-height: ${props => props.theme.layout.mobileHeaderHeight};
     --heading-font: ${props => props.theme.fonts.heading};
     font-family: ${props => props.theme.fonts.body};
