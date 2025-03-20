@@ -15,7 +15,7 @@ const NavMenuWrapper = styled.div`
       padding: 0 30px;
       background-color: transparent !important;
 
-      &-active, &-selected {
+      &-active {
         .ant-menu-title-content {
           ${props => props.theme.mixins.gradientText}
         }
@@ -23,6 +23,8 @@ const NavMenuWrapper = styled.div`
 
       &-selected {
         .ant-menu-title-content {
+          ${props => props.theme.mixins.gradientText}
+
           &::after {
             position: absolute;
             content: "";

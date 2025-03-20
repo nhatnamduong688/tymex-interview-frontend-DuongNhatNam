@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import styledTheme from './styles/theme';
 import antdTheme from './styles/antdTheme';
 import GlobalStyles from './styles/GlobalStyles';
-import { MainLayout, AuthLayout } from "./layouts";
+import { DefaultLayout, AuthLayout } from "./layouts";
 import { HomePage } from './components/HomePage';
 import { BannerSection } from './components/BannerSection';
 import TopProgressBar from './components/TopProgressBar';
@@ -26,7 +26,7 @@ const App = () => {
                 <BrowserRouter>
                     <TopProgressBar />
                     <Routes>
-                        <Route path="/" element={<MainLayout />}>
+                        <Route path="/" element={<DefaultLayout />}>
                             <Route index element={
                                 <>
                                     <BannerSection />
