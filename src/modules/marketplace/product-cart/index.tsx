@@ -22,17 +22,32 @@ interface TProduct {
   description?: string;
 }
 
+// Breakpoint for mobile
+const breakpointSm = '576px';
+
 // Styled components
 const ProductCardStyled = styled(Card)`
-  border-radius: 12px;
-  overflow: hidden;
+  background: #3a384199 !important;
+  border-radius: 10px;
+  border: none !important;
+  padding: 16px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   position: relative;
-  transition: all 0.3s ease;
   height: 100%;
-
+  
+  .ant-card-body {
+    padding: 0 !important;
+  }
+  
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  @media (max-width: ${breakpointSm}) {
+    padding: 8px !important;
   }
 `;
 
@@ -45,10 +60,8 @@ const ImageWrapper = styled.div`
 
 const ImageProduct = styled.div`
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  object-fit: cover;
 `;
 
 const BackgroundImage = styled.img`
@@ -61,12 +74,12 @@ const BackgroundImage = styled.img`
 `;
 
 const ImageProductItem = styled.div`
+  width: 72%;
+  height: 72%;
   position: absolute;
-  top: 50%;
+  bottom: 0;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 70%;
-  height: 70%;
+  transform: translateX(-50%);
 `;
 
 const ItemImage = styled.img`
@@ -77,64 +90,104 @@ const ItemImage = styled.img`
 
 const IconHeartWrapper = styled.div`
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 30px;
+  right: 30px;
   cursor: pointer;
   z-index: 2;
+  
+  @media (max-width: ${breakpointSm}) {
+    top: 16px;
+    right: 16px;
+  }
 `;
 
 const ProductCategoryTag = styled(Tag)`
   position: absolute;
-  top: 12px;
-  left: 12px;
-  border-radius: 20px;
-  padding: 2px 10px;
-  background-color: rgba(255, 255, 255, 0.9);
-  color: #333;
+  top: 24px;
+  left: 24px;
+  font-size: 12px;
   font-weight: 500;
+  background: #313b4580;
+  border: none;
+  padding: 4px 12px;
+  margin: 0;
   z-index: 2;
+  
+  @media (max-width: ${breakpointSm}) {
+    top: 12px;
+    left: 12px;
+    font-size: 10px;
+  }
 `;
 
 const ProductInfo = styled(Flex)`
-  margin-top: 12px;
-  padding: 0 4px;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  
+  @media (max-width: ${breakpointSm}) {
+    margin-top: 14px;
+    margin-bottom: 6px;
+  }
 `;
 
 const ProductName = styled.div`
   font-size: 16px;
   font-weight: 600;
+  line-height: 24px;
+  margin-bottom: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 65%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  
+  @media (max-width: ${breakpointSm}) {
+    font-size: 12px;
+  }
 `;
 
 const ProductPrice = styled(Flex)`
-  font-weight: 700;
+  font-weight: 500;
   font-size: 14px;
+  line-height: 20px;
+  flex: 0 0 max-content;
+  
+  @media (max-width: ${breakpointSm}) {
+    font-size: 10px;
+  }
 `;
 
 const CreatorAvatarContainer = styled(Badge)`
+  .ant-avatar {
+    background-color: #f3f3f3;
+  }
+  
   .ant-badge-count {
     right: 0;
     bottom: 0;
-    top: auto;
+    top: unset;
     padding: 0;
     box-shadow: none;
     background: transparent;
+    transform: unset;
   }
 `;
 
 const CreatorAvatarStatus = styled(Avatar)`
+  background: #17161a;
   border: 2px solid white;
   display: flex;
   align-items: center;
   justify-content: center;
+  bottom: 0;
+  right: 0;
+  top: unset;
+  transform: unset;
 `;
 
 const CreatorName = styled(Typography.Text)`
-  color: rgba(0, 0, 0, 0.65);
   font-size: 12px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.65);
   max-width: calc(100% - 50px);
 `;
 
