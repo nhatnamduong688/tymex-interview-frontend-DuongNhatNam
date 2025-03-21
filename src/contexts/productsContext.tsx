@@ -1,39 +1,15 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useQueryParams } from '../hooks/useQueryParams';
-
-// Define product type
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  category: string;
-  tags: string[];
-}
-
-// Define filter type
-export interface ProductFilter {
-  category?: string | null;
-  categories?: string[];
-  tags?: string[];
-  search?: string;
-}
+import {TFilterProduct, TProduct} from "../types/product.ts";
 
 // Define context type
 interface ProductsContextType {
-  products: Product[];
+  products: TProduct[];
   loading: boolean;
   error: string | null;
-  filteredProducts: Product[];
-  selectedCategory: string | null;
-  selectedTags: string[];
-  filter: ProductFilter;
-  setFilter: (filter: ProductFilter) => void;
-  updateCategory: (category: string | null) => void;
-  addTag: (tag: string) => void;
-  removeTag: (tag: string) => void;
-  setSearch: (search: string) => void;
+  filteredProducts: TProduct[];
+  filter: TFilterProduct;
+  setFilter: (filter: TFilterProduct) => void;
   clearFilters: () => void;
 }
 
@@ -43,170 +19,132 @@ const ProductsContext = createContext<ProductsContextType>({
   loading: false,
   error: null,
   filteredProducts: [],
-  selectedCategory: null,
-  selectedTags: [],
   filter: {},
   setFilter: () => {},
-  updateCategory: () => {},
-  addTag: () => {},
-  removeTag: () => {},
-  setSearch: () => {},
   clearFilters: () => {},
 });
 
 // Sample products data
-const sampleProducts: Product[] = [
+const sampleProducts: TProduct[] = [
   {
     id: '1',
-    name: 'Digital Artwork #1',
+    nameItem: 'Digital Artwork #1',
     description: 'A beautiful digital artwork',
     price: 0.5,
-    imageUrl: '/images/placeholder1.png',
+    backgroundItem: 'bg-item-1',
+    item: 'item-1',
     category: 'Art',
+    nameCreator: 'Artist One',
+    statusOnline: true,
+    created: '2023-01-15',
     tags: ['digital', 'art', 'collectible'],
   },
   {
     id: '2',
-    name: 'Virtual Land',
+    nameItem: 'Virtual Land',
     description: 'Prime location in the metaverse',
     price: 3.2,
-    imageUrl: '/images/placeholder2.png',
+    backgroundItem: 'bg-item-2',
+    item: 'item-2',
     category: 'Real Estate',
+    nameCreator: 'Land Developer',
+    statusOnline: false,
+    created: '2023-02-10',
     tags: ['land', 'metaverse', 'property'],
   },
   {
     id: '3',
-    name: 'Game Character',
+    nameItem: 'Game Character',
     description: 'Rare character with special abilities',
     price: 1.8,
-    imageUrl: '/images/placeholder3.png',
+    backgroundItem: 'bg-item-3',
+    item: 'item-3',
     category: 'Gaming',
+    nameCreator: 'Game Studio',
+    statusOnline: true,
+    created: '2023-03-05',
     tags: ['game', 'character', 'rare'],
   },
   {
     id: '4',
-    name: 'Music Album',
+    nameItem: 'Music Album',
     description: 'Exclusive music album ownership',
     price: 0.8,
-    imageUrl: '/images/placeholder4.png',
+    backgroundItem: 'bg-item-4',
+    item: 'item-4',
     category: 'Music',
+    nameCreator: 'Musician',
+    statusOnline: true,
+    created: '2023-04-20',
     tags: ['music', 'audio', 'exclusive'],
   },
 ];
 
 // Create Provider component
 export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [products] = useState<Product[]>(sampleProducts);
+  const [products] = useState<TProduct[]>(sampleProducts);
   const [loading] = useState<boolean>(false);
   const [error] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [filter, setFilter] = useState<ProductFilter>({
-    category: null,
-    categories: [],
-    tags: [],
-    search: '',
-  });
+  const [filter, setFilter] = useState<TFilterProduct>({});
 
   const { getParams } = useQueryParams();
 
   // Initialize filter from URL params when component mounts
   useEffect(() => {
-    const params = getParams();
-    const initialFilter: ProductFilter = {
-      category: null,
-      categories: [],
-      tags: [],
-      search: '',
-    };
-
-    if (params.categories) {
-      initialFilter.categories = Array.isArray(params.categories)
-        ? params.categories
-        : [params.categories];
-    }
-
-    if (params.tags) {
-      initialFilter.tags = Array.isArray(params.tags)
-        ? params.tags
-        : [params.tags];
-    }
-
-    if (params.search) {
-      initialFilter.search = params.search as string;
-    }
-
-    if (params.category) {
-      initialFilter.category = params.category as string;
-    }
-
-    setFilter(initialFilter);
+    const params = getParams([
+      "keyword",
+      "priceRange",
+      "tier",
+      "theme",
+      "sortTime",
+      "sortPrice",
+      "categories",
+    ]);
+    
+    setFilter(params as unknown as TFilterProduct);
   }, [getParams]);
 
-  // Filter products based on selected category and tags
+  // Apply filters to products
   const filteredProducts = products.filter((product) => {
-    // Filter by category if one is selected
-    if (selectedCategory && product.category !== selectedCategory) {
-      return false;
+    // Filter by keyword search
+    if (filter.keyword && product.nameItem) {
+      const keyword = filter.keyword.toLowerCase();
+      const productName = product.nameItem.toLowerCase();
+      if (!productName.includes(keyword)) {
+        return false;
+      }
     }
     
-    // Filter by tags if any are selected
-    if (selectedTags.length > 0) {
-      return selectedTags.every((tag) => product.tags.includes(tag));
+    // Filter by price range
+    if (filter.priceRange && filter.priceRange.length === 2) {
+      const [min, max] = filter.priceRange;
+      if (product.price < min || product.price > max) {
+        return false;
+      }
+    }
+    
+    // Filter by categories if any are selected
+    if (filter.categories) {
+      // Kiểm tra nếu categories là string, chuyển về array
+      const categoriesArray = Array.isArray(filter.categories) 
+        ? filter.categories 
+        : typeof filter.categories === 'string' 
+          ? [filter.categories] 
+          : [];
+          
+      if (categoriesArray.length > 0) {
+        if (!categoriesArray.some(cat => cat === product.category)) {
+          return false;
+        }
+      }
     }
     
     return true;
   });
 
-  // Update category
-  const updateCategory = (category: string | null) => {
-    setFilter(prev => ({
-      ...prev,
-      category,
-    }));
-  };
-
-  // Add a tag to the filter
-  const addTag = (tag: string) => {
-    setFilter(prev => {
-      const currentTags = prev.tags || [];
-      if (!currentTags.includes(tag)) {
-        return {
-          ...prev,
-          tags: [...currentTags, tag],
-        };
-      }
-      return prev;
-    });
-  };
-
-  // Remove a tag from the filter
-  const removeTag = (tag: string) => {
-    setFilter(prev => {
-      const currentTags = prev.tags || [];
-      return {
-        ...prev,
-        tags: currentTags.filter(t => t !== tag),
-      };
-    });
-  };
-  
-  // Set search term
-  const setSearch = (search: string) => {
-    setFilter(prev => ({
-      ...prev,
-      search,
-    }));
-  };
-
   // Clear all filters
   const clearFilters = () => {
-    setFilter({
-      category: null,
-      categories: [],
-      tags: [],
-      search: '',
-    });
+    setFilter({});
   };
 
   return (
@@ -216,14 +154,8 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
         loading,
         error,
         filteredProducts,
-        selectedCategory,
-        selectedTags,
         filter,
         setFilter,
-        updateCategory,
-        addTag,
-        removeTag,
-        setSearch,
         clearFilters,
       }}
     >

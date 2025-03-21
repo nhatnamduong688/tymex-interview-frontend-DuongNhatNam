@@ -1,117 +1,273 @@
-import React from 'react';
-import { Card, Typography, Divider, Radio, Space, Button, Checkbox, Input } from 'antd';
-import type { RadioChangeEvent } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Button, ConfigProvider, Form, Input, Select, Slider } from "antd";
+import { CloseCircleFilled, SearchOutlined } from "@ant-design/icons";
 import styled from 'styled-components';
-import { SearchOutlined } from '@ant-design/icons';
+import {
+  ProductCategory,
+  ProductTheme,
+  ProductTier,
+  SortType,
+} from "../../../enums/filter";
+import { formatPrice } from "../../../helpers/common";
+import themeFilter from "../../../theme/themeFilterConfig";
+import { TFilterProduct } from "../../../types/product";
+import { useBreakpoint } from "../../../hooks/useBreakpoint";
+import { useQueryParams } from "../../../hooks/useQueryParams";
 import { useProductsContext } from '../../../contexts/productsContext';
 
-const { Title } = Typography;
-const { Search } = Input;
+const FilterContainer = styled(Form)`
+  background: #3a384199 !important;
+  border-radius: 10px;
+  border: none !important;
+  padding: 16px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
 
-const FilterCard = styled(Card)`
-  position: sticky;
-  top: 20px;
-`;
+  .ant-form-item {
+    margin-bottom: 16px;
 
-const FilterSection = styled.div`
-  margin-bottom: 24px;
-`;
-
-const categories = [
-  { value: 'Art', label: 'Art' },
-  { value: 'Gaming', label: 'Gaming' },
-  { value: 'Music', label: 'Music' },
-  { value: 'Real Estate', label: 'Real Estate' },
-];
-
-const popularTags = [
-  { value: 'collectible', label: 'Collectible' },
-  { value: 'rare', label: 'Rare' },
-  { value: 'metaverse', label: 'Metaverse' },
-  { value: 'digital', label: 'Digital' },
-];
-
-export const Filter: React.FC = () => {
-  const { 
-    filter,
-    updateCategory, 
-    addTag, 
-    removeTag,
-    setSearch,
-    clearFilters 
-  } = useProductsContext();
-
-  const selectedCategory = filter.category;
-  const selectedTags = filter.tags || [];
-
-  const handleCategoryChange = (e: RadioChangeEvent) => {
-    updateCategory(e.target.value);
-  };
-
-  const handleTagChange = (tag: string, checked: boolean) => {
-    if (checked) {
-      addTag(tag);
-    } else {
-      removeTag(tag);
+    &:first-child {
+      margin-bottom: 40px;
     }
+  }
+
+  .ant-form-item-label {
+    padding: 0 0 4px;
+
+    label {
+      color: #89888b;
+      font-weight: 600;
+      font-size: 16px;
+      text-transform: uppercase;
+    }
+  }
+
+  .ant-slider {
+    .ant-slider-rail {
+      background-color: #3a3841 !important;
+    }
+
+    .ant-slider-track {
+      background-image: linear-gradient(91.47deg, rgb(218 69 143 / 40%) -6%, rgb(218 52 221 / 40%) 113.05%) !important;
+    }
+
+    .ant-slider-mark {
+      top: 20px;
+
+      .ant-slider-mark-text {
+        color: #d6d6d6 !important;
+        font-weight: 500 !important;
+        font-size: 16px;
+        width: 50%;
+
+        &:first-child {
+          text-align: left;
+          transform: translateX(0) !important;
+        }
+
+        &:last-child {
+          text-align: right;
+          transform: translateX(-100%) !important;
+        }
+      }
+    }
+  }
+
+  .ant-input-outlined {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .ant-select-multiple {
+    .ant-select-selection-item {
+      background: linear-gradient(
+        91.47deg,
+        rgb(218 69 143 / 40%) -6%,
+        rgb(218 52 221 / 40%) 113.05%
+      ) !important;
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+
+    .anticon-close {
+      color: #fff !important;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+
+    .ant-btn {
+      width: 120px;
+
+      .anticon-close-circle {
+        color: #fbc625;
+      }
+    }
+  }
+
+  @media (max-width: 576px) {
+    padding: 8px !important;
+  }
+`;
+
+const optionsCategory = Object.values(ProductCategory).map((item) => ({
+  label: item === "" ? "All" : item,
+  value: item,
+}));
+
+export const Filter = () => {
+  const [form] = Form.useForm<TFilterProduct>();
+
+  const [updateFilter, setUpdateFilter] = useState(false);
+
+  const { getParams, setParams, removeParams } = useQueryParams();
+
+  const params = getParams([
+    "keyword",
+    "priceRange",
+    "tier",
+    "theme",
+    "sortTime",
+    "sortPrice",
+    "categories",
+  ]);
+
+  const { isCollapsed } = useBreakpoint();
+
+  const { filter, setFilter } = useProductsContext();
+
+  const onSubmit = (value: TFilterProduct) => {
+    setUpdateFilter(true);
+    setFilter({
+      ...value,
+      categories: filter.categories || [],
+    });
+    setParams(
+      {
+        ...params,
+        keyword: value.keyword,
+        priceRange: value.priceRange as unknown as string[],
+        tier: value.tier,
+        theme: value.theme,
+        sortTime: value.sortTime,
+        sortPrice: value.sortPrice,
+        ...(isCollapsed && { categories: value.categories }),
+      },
+      { replace: false }
+    );
   };
 
-  const handleSearch = (value: string) => {
-    setSearch(value);
+  const resetFilter = () => {
+    form.resetFields();
+    setFilter({});
+    removeParams([
+      "keyword",
+      "priceRange",
+      "tier",
+      "theme",
+      "sortTime",
+      "sortPrice",
+      ...(isCollapsed ? ["categories"] : []).flat(),
+    ]);
   };
+
+  useEffect(() => {
+    if (updateFilter) return;
+    form.setFieldsValue(params);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
 
   return (
-    <FilterCard>
-      <Title level={4}>Filters</Title>
-      <Divider />
-
-      <FilterSection>
-        <Title level={5}>Search</Title>
-        <Search
-          placeholder="Search products..."
-          onSearch={handleSearch}
-          style={{ width: '100%' }}
-        />
-      </FilterSection>
-
-      <FilterSection>
-        <Title level={5}>Categories</Title>
-        <Radio.Group 
-          value={selectedCategory} 
-          onChange={handleCategoryChange}
-        >
-          <Space direction="vertical">
-            {categories.map(category => (
-              <Radio key={category.value} value={category.value}>
-                {category.label}
-              </Radio>
-            ))}
-          </Space>
-        </Radio.Group>
-      </FilterSection>
-
-      <FilterSection>
-        <Title level={5}>Popular Tags</Title>
-        <Space direction="vertical">
-          {popularTags.map(tag => (
-            <Checkbox 
-              key={tag.value}
-              checked={selectedTags.includes(tag.value)}
-              onChange={e => handleTagChange(tag.value, e.target.checked)}
-            >
-              {tag.label}
-            </Checkbox>
-          ))}
-        </Space>
-      </FilterSection>
-
-      <Button 
-        type="default" 
-        onClick={clearFilters}
-        disabled={!selectedCategory && selectedTags.length === 0 && !filter.search}
+    <ConfigProvider theme={themeFilter}>
+      <FilterContainer
+        form={form}
+        labelCol={{ span: 24 }}
+        onFinish={onSubmit}
       >
-        Clear Filters
-      </Button>
-    </FilterCard>
+        <Form.Item name="keyword">
+          <Input placeholder="Quick search" prefix={<SearchOutlined />} />
+        </Form.Item>
+        <Form.Item name="priceRange" label="Price">
+          <Slider
+            range
+            max={200}
+            min={0.01}
+            marks={{
+              0.01: formatPrice(0.01),
+              200: formatPrice(200),
+            }}
+          />
+        </Form.Item>
+        <Form.Item name="tier" label="Tier">
+          <Select
+            options={[ProductTier.Basic, ProductTier.Premium].map((tier) => ({
+              label: tier,
+              value: tier,
+            }))}
+            allowClear
+          />
+        </Form.Item>
+        <Form.Item name="theme" label="Theme">
+          <Select
+            options={[ProductTheme.Dark, ProductTheme.Light].map((theme) => ({
+              label: theme,
+              value: theme,
+            }))}
+            allowClear
+          />
+        </Form.Item>
+        <Form.Item name="sortTime" label="Time">
+          <Select
+            options={[
+              { label: "Latest", value: SortType.Descending },
+              { label: "Earliest", value: SortType.Ascending },
+            ]}
+            allowClear
+          />
+        </Form.Item>
+        <Form.Item name="sortPrice" label="Price">
+          <Select
+            options={[
+              { label: "Low to high", value: SortType.Ascending },
+              { label: "High to low", value: SortType.Descending },
+            ]}
+            allowClear
+          />
+        </Form.Item>
+        {isCollapsed && (
+          <Form.Item name="categories" label="Categories">
+            <Select
+              mode="multiple"
+              options={optionsCategory.map(({ label, value }) => ({
+                label,
+                value,
+              }))}
+              allowClear
+            />
+          </Form.Item>
+        )}
+
+        <div className="action-buttons">
+          <Button
+            type="text"
+            icon={<CloseCircleFilled />}
+            onClick={resetFilter}
+          >
+            Reset filter
+          </Button>
+          <Button htmlType="submit" type="primary">
+            Search
+          </Button>
+        </div>
+      </FilterContainer>
+    </ConfigProvider>
   );
 }; 

@@ -1,146 +1,73 @@
-import React, { useState } from 'react';
-import { Button, Drawer, Space, Radio, Checkbox, Divider, Typography, Input } from 'antd';
-import { FilterOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
-import type { RadioChangeEvent } from 'antd';
-import { useProductsContext } from '../../../contexts/productsContext';
+import { Drawer, Typography } from "antd";
+import { useState } from "react";
+import styled from "styled-components";
+import { Filter } from "../filter";
+import { Button } from "../../../components/Button";
+import { FilterOutlined } from "@ant-design/icons";
 
-const { Title } = Typography;
-const { Search } = Input;
-
-const FilterButton = styled(Button)`
-  margin-bottom: 16px;
-  display: block;
-  width: 100%;
+const FilterMobileButton = styled(Button)`
+  padding: 20px 16px 20px 16px !important;
+  margin-left: 20px;
+  margin-bottom: 20px;
+  width: 180px;
 `;
 
-const FilterSection = styled.div`
-  margin-bottom: 24px;
-`;
+const FilterMobileDrawer = styled(Drawer)`
+  &.ant-drawer .ant-drawer-content-wrapper {
+    max-width: 400px !important;
+  }
 
-const categories = [
-  { value: 'Art', label: 'Art' },
-  { value: 'Gaming', label: 'Gaming' },
-  { value: 'Music', label: 'Music' },
-  { value: 'Real Estate', label: 'Real Estate' },
-];
+  &.ant-drawer .ant-drawer-content {
+    background: #17161a !important;
 
-const popularTags = [
-  { value: 'collectible', label: 'Collectible' },
-  { value: 'rare', label: 'Rare' },
-  { value: 'metaverse', label: 'Metaverse' },
-  { value: 'digital', label: 'Digital' },
-];
-
-export const FilterMobile: React.FC = () => {
-  const [open, setOpen] = useState(false);
-  const { 
-    filter,
-    updateCategory, 
-    addTag, 
-    removeTag,
-    setSearch,
-    clearFilters 
-  } = useProductsContext();
-
-  const selectedCategory = filter.category;
-  const selectedTags = filter.tags || [];
-
-  const showDrawer = () => {
-    setOpen(true);
-  };
-
-  const onClose = () => {
-    setOpen(false);
-  };
-
-  const handleCategoryChange = (e: RadioChangeEvent) => {
-    updateCategory(e.target.value);
-  };
-
-  const handleTagChange = (tag: string, checked: boolean) => {
-    if (checked) {
-      addTag(tag);
-    } else {
-      removeTag(tag);
+    .ant-drawer-body {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 32px;
     }
-  };
 
-  const handleSearch = (value: string) => {
-    setSearch(value);
-  };
+    .ant-drawer-header {
+      padding: 32px;
 
+      &-title {
+        flex-direction: row-reverse;
+
+        h3 {
+          margin: 0;
+        }
+      }
+    }
+
+    .ant-drawer-close {
+      margin: 0;
+      color: #fff !important;
+    }
+  }
+`;
+
+export const FilterMobile = () => {
+  const [openDrawer, setOpenDrawer] = useState(false);
+  
   return (
     <>
-      <FilterButton 
-        type="primary" 
-        icon={<FilterOutlined />} 
-        onClick={showDrawer}
+      <FilterMobileButton
+        icon={<FilterOutlined />}
+        ghost
+        onClick={() => setOpenDrawer((open) => !open)}
       >
-        Filters
-      </FilterButton>
-      <Drawer
-        title="Filters"
-        placement="right"
-        onClose={onClose}
-        open={open}
-        width={300}
-        footer={
-          <Space>
-            <Button 
-              onClick={clearFilters}
-              disabled={!selectedCategory && selectedTags.length === 0 && !filter.search}
-            >
-              Clear
-            </Button>
-            <Button type="primary" onClick={onClose}>
-              Apply
-            </Button>
-          </Space>
-        }
+        Filters & Sort
+      </FilterMobileButton>
+      
+      <FilterMobileDrawer
+        placement="left"
+        width="100%"
+        open={openDrawer}
+        onClose={() => setOpenDrawer(false)}
+        title={<Typography.Title level={3}>Filters & Sort</Typography.Title>}
       >
-        <FilterSection>
-          <Title level={5}>Search</Title>
-          <Search
-            placeholder="Search products..."
-            onSearch={handleSearch}
-            style={{ width: '100%' }}
-          />
-        </FilterSection>
-        
-        <FilterSection>
-          <Title level={5}>Categories</Title>
-          <Radio.Group 
-            value={selectedCategory} 
-            onChange={handleCategoryChange}
-          >
-            <Space direction="vertical">
-              {categories.map(category => (
-                <Radio key={category.value} value={category.value}>
-                  {category.label}
-                </Radio>
-              ))}
-            </Space>
-          </Radio.Group>
-        </FilterSection>
-        
-        <Divider />
-        
-        <FilterSection>
-          <Title level={5}>Popular Tags</Title>
-          <Space direction="vertical">
-            {popularTags.map(tag => (
-              <Checkbox 
-                key={tag.value}
-                checked={selectedTags.includes(tag.value)}
-                onChange={e => handleTagChange(tag.value, e.target.checked)}
-              >
-                {tag.label}
-              </Checkbox>
-            ))}
-          </Space>
-        </FilterSection>
-      </Drawer>
+        <Filter />
+      </FilterMobileDrawer>
     </>
   );
 }; 
