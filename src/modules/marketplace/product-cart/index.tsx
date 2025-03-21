@@ -101,7 +101,8 @@ const OnlineIndicator = styled.div`
 
 const CreatorName = styled.span`
   font-size: 14px;
-  color: #8a8d98;
+  font-weight: 500;
+  color: #a9a9b2;
 `;
 
 const TagsContainer = styled.div`
@@ -125,6 +126,11 @@ const Tag = styled.span`
 `;
 
 export const ProductCart: React.FC<ProductCartProps> = ({ product }) => {
+  // Kiểm tra null/undefined cho product
+  if (!product) {
+    return <div>Loading product...</div>;
+  }
+
   return (
     <CardContainer>
       <CardBackground>
@@ -132,11 +138,13 @@ export const ProductCart: React.FC<ProductCartProps> = ({ product }) => {
         <ItemImage src={product.imageItem} alt={product.name} />
       </CardBackground>
       
-      <TagsContainer>
-        {product.tags.map((tag, index) => (
-          <Tag key={index}>{tag}</Tag>
-        ))}
-      </TagsContainer>
+      {product.tags && product.tags.length > 0 && (
+        <TagsContainer>
+          {product.tags.map((tag, index) => (
+            <Tag key={index}>{tag}</Tag>
+          ))}
+        </TagsContainer>
+      )}
       
       <CardContent>
         <ProductName>{product.name}</ProductName>

@@ -9,6 +9,7 @@ import GlobalStyles from './styles/GlobalStyles';
 import TopProgressBar from './components/TopProgressBar';
 import { routes } from './routes/routes';
 import './styles/nprogress.css';
+import { ApiDebugger } from './components/ApiDebugger';
 
 const App = () => {
     return (
@@ -17,6 +18,7 @@ const App = () => {
                 <GlobalStyles />
                 {/*<TopProgressBar />*/}
                 <RouterProvider router={routes} />
+                {process.env.NODE_ENV !== 'production' && <ApiDebugger />}
             </ThemeProvider>
         </ConfigProvider>
     );

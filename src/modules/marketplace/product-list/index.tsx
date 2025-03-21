@@ -1,14 +1,10 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Empty, Grid, List, Skeleton } from "antd";
-import VirtualList from 'rc-virtual-list';
+import React, { useState } from "react";
+import { Empty, Grid, Input, Button, Alert } from "antd";
 import styled from 'styled-components';
+import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ProductCart } from "../product-cart";
-import { useProduct } from "./hook";
+import { useProducts } from "../../../hooks/useProducts";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
-
-const { useBreakpoint } = Grid;
-
-const ContainerHeight = 800;
 
 const GridStyled = styled.div`
   display: grid;
@@ -36,24 +32,24 @@ const LoadMoreButtonWrapper = styled.div`
   padding: 16px;
 `;
 
-const LoadMoreButton = styled.button`
+const LoadMoreButton = styled(Button)`
   background: linear-gradient(91.47deg, rgba(218, 69, 143, 0.3) -6%, rgba(218, 52, 221, 0.3) 113.05%);
-  border: none;
-  border-radius: 8px;
   color: white;
-  cursor: pointer;
   font-weight: 600;
-  padding: 12px 24px;
-  transition: opacity 0.2s;
   
-  &:hover {
-    opacity: 0.8;
+  &:hover, &:focus {
+    opacity: 0.9;
+    color: white;
   }
   
   &:disabled {
-    cursor: not-allowed;
     opacity: 0.5;
   }
+`;
+
+const SearchContainer = styled.div`
+  margin-bottom: 24px;
+  max-width: 500px;
 `;
 
 const EmptyContainer = styled.div`
@@ -74,98 +70,154 @@ const EmptyContainer = styled.div`
   }
 `;
 
+const ErrorContainer = styled.div`
+  width: 100%;
+  padding: 24px;
+  text-align: center;
+`;
+
+const StatusBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const ResultsCount = styled.div`
+  color: #89888b;
+`;
+
+const RefreshButton = styled(Button)`
+  display: flex;
+  align-items: center;
+`;
+
 export const ProductList: React.FC = () => {
-  const { dataProduct, hasMore, fetchNextPage, isLoading, isFetchingNextPage, isError } = useProduct();
-  const loadingRef = useRef<HTMLDivElement>(null);
-  const screens = useBreakpoint();
-  const [columnCount, setColumnCount] = useState(4);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const {
+    products,
+    loading,
+    error,
+    hasMore,
+    totalCount,
+    loadMore,
+    refreshData,
+    applyFilter,
+    isFetchingNextPage,
+    lastRefreshed
+  } = useProducts({
+    autoRefresh: true,
+    refreshInterval: 60000, // 60 seconds
+    pageSize: 8
+  });
 
-  // Update columns based on breakpoints
-  useEffect(() => {
-    if (screens.xs) {
-      setColumnCount(1);
-    } else if (screens.sm) {
-      setColumnCount(2);
-    } else if (screens.lg) {
-      setColumnCount(3);
-    } else {
-      setColumnCount(4);
-    }
-  }, [screens]);
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    applyFilter({ search: value || undefined });
+  };
 
-  // Intersection observer for infinite scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    if (loadingRef.current) {
-      observer.observe(loadingRef.current);
-    }
-
-    return () => {
-      if (loadingRef.current) {
-        observer.unobserve(loadingRef.current);
-      }
-    };
-  }, [fetchNextPage, hasMore, isLoading, isFetchingNextPage]);
-
-  // Handle manual load more
-  const handleLoadMore = useCallback(() => {
-    if (!isLoading && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [fetchNextPage, isLoading, isFetchingNextPage]);
-
-  if (isLoading && dataProduct.length === 0) {
+  // Initial loading state
+  if (loading && products.length === 0) {
     return <LoadingSpinner />;
   }
 
-  if (isError) {
+  // Error state
+  if (error) {
     return (
-      <EmptyContainer>
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="Error loading products. Please try again later."
+      <ErrorContainer>
+        <Alert
+          message="Error Loading Products"
+          description={error}
+          type="error"
+          showIcon
+          action={
+            <Button size="small" type="primary" onClick={() => refreshData()}>
+              Try Again
+            </Button>
+          }
         />
-      </EmptyContainer>
+      </ErrorContainer>
     );
   }
 
-  if (dataProduct.length === 0) {
+  // Empty state
+  if (!loading && products.length === 0) {
     return (
-      <EmptyContainer>
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="No products found."
-        />
-      </EmptyContainer>
+      <>
+        <SearchContainer>
+          <Input.Search
+            placeholder="Search products"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onSearch={handleSearch}
+            enterButton
+            prefix={<SearchOutlined />}
+            size="large"
+          />
+        </SearchContainer>
+        
+        <EmptyContainer>
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="No products found"
+          />
+        </EmptyContainer>
+      </>
     );
   }
 
   return (
-    <>
+    <div>
+      <SearchContainer>
+        <Input.Search
+          placeholder="Search products"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onSearch={handleSearch}
+          enterButton
+          prefix={<SearchOutlined />}
+          size="large"
+        />
+      </SearchContainer>
+      
+      <StatusBar>
+        <ResultsCount>
+          Showing {products.length} of {totalCount} products
+          {lastRefreshed && (
+            <span style={{ marginLeft: 8, fontSize: 12, color: '#999' }}>
+              Last updated: {lastRefreshed.toLocaleTimeString()}
+            </span>
+          )}
+        </ResultsCount>
+        <RefreshButton 
+          type="default" 
+          icon={<ReloadOutlined />} 
+          onClick={() => refreshData()}
+          loading={loading && !isFetchingNextPage}
+        >
+          Refresh
+        </RefreshButton>
+      </StatusBar>
+      
       <GridStyled>
-        {dataProduct.map((product) => (
+        {products.map((product) => (
           <ProductCart key={product.id} product={product} />
         ))}
       </GridStyled>
       
       {hasMore && (
-        <LoadMoreButtonWrapper ref={loadingRef}>
-          <LoadMoreButton 
-            onClick={handleLoadMore} 
-            disabled={isLoading || isFetchingNextPage}
+        <LoadMoreButtonWrapper>
+          <LoadMoreButton
+            type="primary"
+            onClick={loadMore}
+            loading={isFetchingNextPage}
+            disabled={loading || isFetchingNextPage}
           >
             {isFetchingNextPage ? "Loading..." : "Load More"}
           </LoadMoreButton>
         </LoadMoreButtonWrapper>
       )}
-    </>
+    </div>
   );
 }; 
