@@ -1,223 +1,260 @@
-import React, { useState } from "react";
-import { Empty, Grid, Input, Button, Alert } from "antd";
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
-import { ProductCart } from "../product-cart";
-import { useProducts } from "../../../hooks/useProducts";
-import { LoadingSpinner } from "../../../components/LoadingSpinner";
+import { Skeleton, Input, Flex, Typography, Button, Empty, Alert, Space, Grid } from 'antd';
+import { SearchOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
+import { ProductCart } from '../product-cart';
+import { useBreakpoint } from '../../../hooks/useBreakpoint';
+import { useAppDispatch, useAppSelector } from '../../../hooks';
+import { RootState } from '../../../store';
+import { fetchProducts, fetchMoreProducts } from '../../../store/slices/productsSlice';
+import { resetFilter } from '../../../store/slices/filterSlice';
+import { TProduct } from '../../../types/product';
 
-const GridStyled = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
-  position: relative;
-  
-  @media (max-width: 1199px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  @media (max-width: 991px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  @media (max-width: 575px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const LoadMoreButtonWrapper = styled.div`
+// Styled components
+const StyledProductList = styled.div`
   display: flex;
-  justify-content: center;
-  margin-top: 24px;
-  padding: 16px;
-`;
-
-const LoadMoreButton = styled(Button)`
-  background: linear-gradient(91.47deg, rgba(218, 69, 143, 0.3) -6%, rgba(218, 52, 221, 0.3) 113.05%);
-  color: white;
-  font-weight: 600;
-  
-  &:hover, &:focus {
-    opacity: 0.9;
-    color: white;
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-  }
+  flex-direction: column;
+  gap: 20px;
 `;
 
 const SearchContainer = styled.div`
-  margin-bottom: 24px;
-  max-width: 500px;
-`;
-
-const EmptyContainer = styled.div`
-  width: 100%;
-  height: 400px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
   
-  .ant-empty-image {
-    height: 120px;
-  }
-  
-  .ant-empty-description {
-    color: #89888b;
-    font-size: 16px;
+  @media (max-width: 576px) {
+    flex-direction: column;
+    align-items: stretch;
   }
 `;
 
-const ErrorContainer = styled.div`
-  width: 100%;
+const ProductGrid = styled.div<{ $cols: number }>`
+  display: grid;
+  grid-template-columns: repeat(${props => props.$cols}, 1fr);
+  gap: 16px;
+`;
+
+const LoadMoreContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
+
+const NoResultsContainer = styled.div`
   padding: 24px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
   text-align: center;
 `;
 
-const StatusBar = styled.div`
+const ActiveFiltersContainer = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: center;
 `;
 
-const ResultsCount = styled.div`
-  color: #89888b;
-`;
-
-const RefreshButton = styled(Button)`
+const FilterTag = styled.div`
+  background-color: #f0f0f0;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 14px;
   display: flex;
   align-items: center;
 `;
 
-export const ProductList: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+const RetryButton = styled(Button)`
+  margin-top: 16px;
+`;
+
+export const ProductList = () => {
+  const dispatch = useAppDispatch();
+  const { screens } = useBreakpoint();
   
-  const {
-    products,
-    loading,
-    error,
-    hasMore,
-    totalCount,
-    loadMore,
-    refreshData,
-    applyFilter,
-    isFetchingNextPage,
-    lastRefreshed
-  } = useProducts({
-    autoRefresh: true,
-    refreshInterval: 60000, // 60 seconds
-    pageSize: 8
-  });
-
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    applyFilter({ search: value || undefined });
+  // Get products state from Redux
+  const { 
+    data: products = [], 
+    loading = false, 
+    error = null, 
+    hasMore = false, 
+    totalCount = 0, 
+    isFetchingNextPage = false 
+  } = useAppSelector((state: RootState) => state.products);
+  
+  // Get filter state from Redux
+  const { appliedFilters = {} } = useAppSelector((state: RootState) => state.filter);
+  
+  // Fetch products when component mounts or appliedFilters change
+  useEffect(() => {
+    console.log("Applied filters changed, fetching products:", appliedFilters);
+    dispatch(fetchProducts());
+  }, [dispatch, appliedFilters]);
+  
+  console.log("ProductList render với", products.length, "sản phẩm:", products);
+  console.log("Filters từ Redux:", appliedFilters);
+  
+  // Calculate columns based on screen size
+  const getColumns = () => {
+    if (screens.xxl) return 4;
+    if (screens.xl) return 3;
+    if (screens.md) return 2;
+    return 1;
   };
 
-  // Initial loading state
-  if (loading && products.length === 0) {
-    return <LoadingSpinner />;
-  }
+  // Convert filter state to readable format
+  const getActiveFilters = () => {
+    const activeFilters = [];
+    
+    if (appliedFilters.search) {
+      activeFilters.push(`Search: "${appliedFilters.search}"`);
+    }
+    
+    if (appliedFilters.categories && appliedFilters.categories.length > 0) {
+      activeFilters.push(`Categories: ${appliedFilters.categories.join(', ')}`);
+    }
+    
+    if (appliedFilters.tier) {
+      activeFilters.push(`Tier: ${appliedFilters.tier}`);
+    }
+    
+    if (appliedFilters.theme) {
+      activeFilters.push(`Theme: ${appliedFilters.theme}`);
+    }
+    
+    if (appliedFilters.priceRange) {
+      activeFilters.push(`Price: $${appliedFilters.priceRange[0]} - $${appliedFilters.priceRange[1]}`);
+    }
+    
+    return activeFilters;
+  };
+  
+  // Clear all filters and refresh products
+  const handleClearFilters = () => {
+    dispatch(resetFilter());
+  };
+  
+  // Retry loading products
+  const handleRetry = () => {
+    dispatch(fetchProducts());
+  };
 
-  // Error state
-  if (error) {
-    return (
-      <ErrorContainer>
-        <Alert
-          message="Error Loading Products"
-          description={error}
-          type="error"
-          showIcon
-          action={
-            <Button size="small" type="primary" onClick={() => refreshData()}>
-              Try Again
-            </Button>
-          }
-        />
-      </ErrorContainer>
-    );
-  }
-
-  // Empty state
-  if (!loading && products.length === 0) {
-    return (
-      <>
-        <SearchContainer>
-          <Input.Search
-            placeholder="Search products"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onSearch={handleSearch}
-            enterButton
-            prefix={<SearchOutlined />}
-            size="large"
-          />
-        </SearchContainer>
-        
-        <EmptyContainer>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="No products found"
-          />
-        </EmptyContainer>
-      </>
-    );
-  }
+  // Load more products when clicking "Load More"
+  const loadMore = () => {
+    dispatch(fetchMoreProducts());
+  };
 
   return (
-    <div>
+    <StyledProductList>
       <SearchContainer>
-        <Input.Search
-          placeholder="Search products"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onSearch={handleSearch}
-          enterButton
-          prefix={<SearchOutlined />}
-          size="large"
-        />
-      </SearchContainer>
-      
-      <StatusBar>
-        <ResultsCount>
-          Showing {products.length} of {totalCount} products
-          {lastRefreshed && (
-            <span style={{ marginLeft: 8, fontSize: 12, color: '#999' }}>
-              Last updated: {lastRefreshed.toLocaleTimeString()}
-            </span>
-          )}
-        </ResultsCount>
-        <RefreshButton 
-          type="default" 
-          icon={<ReloadOutlined />} 
-          onClick={() => refreshData()}
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={handleRetry}
           loading={loading && !isFetchingNextPage}
         >
           Refresh
-        </RefreshButton>
-      </StatusBar>
-      
-      <GridStyled>
-        {products.map((product) => (
-          <ProductCart key={product.id} product={product} />
-        ))}
-      </GridStyled>
-      
-      {hasMore && (
-        <LoadMoreButtonWrapper>
-          <LoadMoreButton
-            type="primary"
-            onClick={loadMore}
-            loading={isFetchingNextPage}
-            disabled={loading || isFetchingNextPage}
-          >
-            {isFetchingNextPage ? "Loading..." : "Load More"}
-          </LoadMoreButton>
-        </LoadMoreButtonWrapper>
+        </Button>
+      </SearchContainer>
+
+      {/* Error handling with retry option */}
+      {error && (
+        <Alert
+          message="Error Loading Products"
+          description={
+            <Space direction="vertical">
+              <Typography.Text>{error}</Typography.Text>
+              <RetryButton 
+                type="primary" 
+                icon={<ReloadOutlined />} 
+                onClick={handleRetry}
+              >
+                Retry Now
+              </RetryButton>
+            </Space>
+          }
+          type="error"
+          showIcon
+        />
       )}
-    </div>
+
+      {/* Loading state */}
+      {loading && !isFetchingNextPage && !error && (
+        <ProductGrid $cols={getColumns()}>
+          {Array.from({ length: 8 }).map((_, index) => (
+            <Skeleton key={index} active paragraph={{ rows: 4 }} />
+          ))}
+        </ProductGrid>
+      )}
+
+      {/* Empty state with active filters */}
+      {!loading && !error && products.length === 0 && (
+        <NoResultsContainer>
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <Typography.Text strong style={{ fontSize: '16px' }}>
+                No products found
+              </Typography.Text>
+            }
+          />
+          
+          {getActiveFilters().length > 0 && (
+            <>
+              <Typography.Text type="secondary" style={{ display: 'block', marginTop: '12px' }}>
+                No products match your current filters:
+              </Typography.Text>
+              
+              <ActiveFiltersContainer>
+                {getActiveFilters().map((filter, index) => (
+                  <FilterTag key={index}>
+                    {filter}
+                  </FilterTag>
+                ))}
+              </ActiveFiltersContainer>
+              
+              <Button 
+                type="link" 
+                onClick={handleClearFilters}
+                style={{ marginTop: '16px' }}
+              >
+                Clear filters
+              </Button>
+            </>
+          )}
+        </NoResultsContainer>
+      )}
+
+      {/* Product grid */}
+      {!loading && !error && products.length > 0 && (
+        <>
+          <Flex justify="space-between" align="center">
+            <Typography.Title level={5} style={{ margin: 0 }}>
+              Showing {products.length} of {totalCount} products
+            </Typography.Title>
+          </Flex>
+
+          <ProductGrid $cols={getColumns()}>
+            {products.map((product: TProduct) => (
+              <ProductCart key={product.id} product={product} />
+            ))}
+          </ProductGrid>
+
+          {hasMore && (
+            <LoadMoreContainer>
+              <Button
+                onClick={loadMore}
+                loading={isFetchingNextPage}
+                disabled={isFetchingNextPage}
+                type="primary"
+              >
+                {isFetchingNextPage ? 'Loading...' : 'Load More'}
+              </Button>
+            </LoadMoreContainer>
+          )}
+        </>
+      )}
+    </StyledProductList>
   );
 }; 

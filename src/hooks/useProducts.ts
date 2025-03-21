@@ -7,6 +7,7 @@ interface UseProductsProps {
   pageSize?: number;
   autoRefresh?: boolean;
   refreshInterval?: number;
+  maxRetries?: number;
 }
 
 interface UseProductsReturn {
@@ -20,6 +21,7 @@ interface UseProductsReturn {
   applyFilter: (filters: Record<string, any>) => void;
   isFetchingNextPage: boolean;
   lastRefreshed: Date | null;
+  filters: Record<string, any>;
 }
 
 export const useProducts = ({
@@ -27,6 +29,7 @@ export const useProducts = ({
   pageSize = 12,
   autoRefresh = false,
   refreshInterval = 60000, // 1 minute
+  maxRetries = 3,
 }: UseProductsProps = {}): UseProductsReturn => {
   const [products, setProducts] = useState<TProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -39,8 +42,10 @@ export const useProducts = ({
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   
   const intervalRef = useRef<number | null>(null);
+  const retryCountRef = useRef<number>(0);
+  const retryTimeoutRef = useRef<number | null>(null);
 
-  const fetchProducts = useCallback(async (currentPage: number, replace: boolean = true) => {
+  const fetchProducts = useCallback(async (currentPage: number, replace: boolean = true, retryAttempt: number = 0) => {
     try {
       const isLoadingMore = currentPage > 1;
       
@@ -58,6 +63,9 @@ export const useProducts = ({
         filters
       );
       
+      // Reset retry count on successful request
+      retryCountRef.current = 0;
+      
       setTotalCount(response.total);
       setHasMore(response.hasMore);
       
@@ -71,18 +79,46 @@ export const useProducts = ({
       setLastRefreshed(new Date());
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(errorMessage);
       console.error('Error fetching products:', err);
+      
+      // Implement retry logic
+      if (retryAttempt < maxRetries) {
+        console.log(`Retrying fetch (${retryAttempt + 1}/${maxRetries})...`);
+        
+        // Clear any existing retry timeout
+        if (retryTimeoutRef.current) {
+          window.clearTimeout(retryTimeoutRef.current);
+        }
+        
+        // Exponential backoff: 1s, 2s, 4s, etc.
+        const retryDelay = Math.min(1000 * Math.pow(2, retryAttempt), 10000);
+        
+        retryTimeoutRef.current = window.setTimeout(() => {
+          fetchProducts(currentPage, replace, retryAttempt + 1);
+        }, retryDelay);
+        
+        return;
+      }
+      
+      setError(`Failed to load products: ${errorMessage}. Please try again later.`);
+      retryCountRef.current = 0;
     } finally {
       setLoading(false);
       setIsFetchingNextPage(false);
     }
-  }, [filters, pageSize]);
+  }, [filters, pageSize, maxRetries]);
 
   // Initial load and when filters change
   useEffect(() => {
     setPage(1);
     fetchProducts(1, true);
+    
+    // Cleanup function
+    return () => {
+      if (retryTimeoutRef.current) {
+        window.clearTimeout(retryTimeoutRef.current);
+      }
+    };
   }, [fetchProducts]);
 
   // Setup auto-refresh if enabled
@@ -106,6 +142,10 @@ export const useProducts = ({
         if (intervalRef.current) {
           window.clearInterval(intervalRef.current);
           intervalRef.current = null;
+        }
+        if (retryTimeoutRef.current) {
+          window.clearTimeout(retryTimeoutRef.current);
+          retryTimeoutRef.current = null;
         }
       };
     }
@@ -145,7 +185,8 @@ export const useProducts = ({
     refreshData,
     applyFilter,
     isFetchingNextPage,
-    lastRefreshed
+    lastRefreshed,
+    filters
   };
 };
 

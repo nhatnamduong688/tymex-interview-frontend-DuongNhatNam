@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { productService } from '../../services/api';
 import { TProduct } from '../../types/product';
@@ -8,7 +8,7 @@ const DebugContainer = styled.div<{ isVisible: boolean }>`
   position: fixed;
   bottom: ${props => props.isVisible ? '0' : '-400px'};
   right: 20px;
-  width: 300px;
+  width: 350px;
   background-color: rgba(0, 0, 0, 0.85);
   color: #fff;
   border-radius: 8px 8px 0 0;
@@ -35,13 +35,20 @@ const Title = styled.h3`
   font-weight: 600;
 `;
 
-const StatusBadge = styled.span<{ connected: boolean }>`
+const StatusBadge = styled.span<{ status: 'connected' | 'disconnected' | 'checking' | 'retrying' }>`
   display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   margin-right: 6px;
-  background-color: ${props => props.connected ? '#4caf50' : '#f44336'};
+  background-color: ${props => {
+    switch (props.status) {
+      case 'connected': return '#4caf50';
+      case 'disconnected': return '#f44336';
+      case 'retrying': return '#ff9800';
+      default: return '#2196f3';
+    }
+  }};
 `;
 
 const ToggleButton = styled.button`
@@ -75,6 +82,14 @@ const DebugButton = styled.button`
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.3);
+  }
+`;
+
+const ErrorButton = styled(DebugButton)`
+  background-color: rgba(255, 59, 48, 0.3);
+  
+  &:hover {
+    background-color: rgba(255, 59, 48, 0.5);
   }
 `;
 
@@ -119,18 +134,42 @@ const ErrorMessage = styled.div`
   margin-top: 8px;
 `;
 
+const RetryInfo = styled.div`
+  color: #ff9800;
+  background-color: rgba(255, 152, 0, 0.1);
+  padding: 6px;
+  border-radius: 4px;
+  margin-top: 8px;
+`;
+
+const ButtonsContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+`;
+
 export const ApiDebugger: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [apiStatus, setApiStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
+  const [apiStatus, setApiStatus] = useState<'connected' | 'disconnected' | 'checking' | 'retrying'>('checking');
   const [sampleProduct, setSampleProduct] = useState<TProduct | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [apiUrl, setApiUrl] = useState<string>('');
+  const [retryAttempt, setRetryAttempt] = useState<number>(0);
+  const [maxRetries, setMaxRetries] = useState<number>(3);
+  const [mockErrorMode, setMockErrorMode] = useState<boolean>(false);
+  
+  const retryTimeoutRef = useRef<number | null>(null);
 
-  const checkApiConnection = async () => {
+  const checkApiConnection = async (forceError = false) => {
     setApiStatus('checking');
     setError(null);
+    setRetryAttempt(0);
     
     try {
+      if (forceError || mockErrorMode) {
+        throw new Error('Forced error for testing');
+      }
+      
       // Try to get first product as sample
       const response = await productService.getProducts(1, 1);
       
@@ -144,9 +183,47 @@ export const ApiDebugger: React.FC = () => {
       setApiUrl(import.meta.env.VITE_API_URL || 'https://tymex-mock-api.onrender.com');
       
     } catch (err) {
+      handleApiError(err);
+    }
+  };
+
+  const handleApiError = (err: unknown, currentRetry = 0) => {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+    console.error('API Connection Error:', err);
+    
+    if (currentRetry < maxRetries) {
+      setApiStatus('retrying');
+      setRetryAttempt(currentRetry + 1);
+      
+      // Clear any existing retry timeout
+      if (retryTimeoutRef.current) {
+        window.clearTimeout(retryTimeoutRef.current);
+      }
+      
+      // Exponential backoff: 1s, 2s, 4s, etc.
+      const retryDelay = Math.min(1000 * Math.pow(2, currentRetry), 10000);
+      setError(`Connection failed: ${errorMessage}. Retrying in ${retryDelay/1000}s (${currentRetry + 1}/${maxRetries})...`);
+      
+      retryTimeoutRef.current = window.setTimeout(() => {
+        if (mockErrorMode) {
+          handleApiError(new Error('Forced error during retry'), currentRetry + 1);
+        } else {
+          checkApiConnection();
+        }
+      }, retryDelay);
+    } else {
       setApiStatus('disconnected');
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      console.error('API Connection Error:', err);
+      setError(`Failed to connect: ${errorMessage}. Max retries (${maxRetries}) reached.`);
+    }
+  };
+
+  const toggleMockErrorMode = () => {
+    setMockErrorMode(!mockErrorMode);
+    if (!mockErrorMode) {
+      checkApiConnection(true);
+    } else {
+      // When turning off mock error mode, check connection normally
+      checkApiConnection(false);
     }
   };
 
@@ -154,6 +231,12 @@ export const ApiDebugger: React.FC = () => {
     if (process.env.NODE_ENV === 'development') {
       checkApiConnection();
     }
+    
+    return () => {
+      if (retryTimeoutRef.current) {
+        window.clearTimeout(retryTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Only render in development mode
@@ -164,18 +247,24 @@ export const ApiDebugger: React.FC = () => {
   return (
     <>
       <ToggleButton onClick={() => setIsVisible(!isVisible)}>
-        <StatusBadge connected={apiStatus === 'connected'} />
-        API {apiStatus === 'connected' ? 'Connected' : apiStatus === 'disconnected' ? 'Disconnected' : 'Checking...'}
+        <StatusBadge status={apiStatus} />
+        API {apiStatus === 'connected' 
+          ? 'Connected' 
+          : apiStatus === 'disconnected' 
+            ? 'Disconnected' 
+            : apiStatus === 'retrying'
+              ? `Retrying (${retryAttempt}/${maxRetries})`
+              : 'Checking...'}
       </ToggleButton>
       
       <DebugContainer isVisible={isVisible}>
         <DebugHeader>
           <Title>
-            <StatusBadge connected={apiStatus === 'connected'} />
+            <StatusBadge status={apiStatus} />
             API Debugger
           </Title>
           <div>
-            <DebugButton onClick={checkApiConnection}>
+            <DebugButton onClick={() => checkApiConnection()}>
               Refresh
             </DebugButton>
             <DebugButton onClick={() => setIsVisible(false)}>
@@ -192,9 +281,12 @@ export const ApiDebugger: React.FC = () => {
                 ? '✅ Connected' 
                 : apiStatus === 'disconnected' 
                   ? '❌ Disconnected' 
-                  : '🔄 Checking...'}
+                  : apiStatus === 'retrying'
+                    ? `🔄 Retrying (${retryAttempt}/${maxRetries})`
+                    : '🔍 Checking...'}
               <br />
               URL: {apiUrl}
+              {mockErrorMode && <div style={{ color: '#ff9800', marginTop: '4px' }}>⚠️ Mock Error Mode Active</div>}
             </ApiInfo>
           </DebugSection>
           
@@ -214,11 +306,37 @@ export const ApiDebugger: React.FC = () => {
             </ApiInfo>
           </DebugSection>
           
+          <DebugSection>
+            <SectionTitle>Retry Configuration:</SectionTitle>
+            <ApiInfo>
+              Max Retries: {maxRetries}
+              <br />
+              Retry Strategy: Exponential backoff (1s, 2s, 4s...)
+              <br />
+              Current Attempt: {retryAttempt > 0 ? retryAttempt : 'None'}
+            </ApiInfo>
+          </DebugSection>
+          
           {error && (
             <ErrorMessage>
               {error}
             </ErrorMessage>
           )}
+          
+          {apiStatus === 'retrying' && (
+            <RetryInfo>
+              Automatically retrying connection...
+            </RetryInfo>
+          )}
+          
+          <ButtonsContainer>
+            <DebugButton onClick={() => checkApiConnection()}>
+              Test Connection
+            </DebugButton>
+            <ErrorButton onClick={toggleMockErrorMode}>
+              {mockErrorMode ? 'Disable Error Mode' : 'Force Error'}
+            </ErrorButton>
+          </ButtonsContainer>
         </DebugContent>
       </DebugContainer>
     </>
