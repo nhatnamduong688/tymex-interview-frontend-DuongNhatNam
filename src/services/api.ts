@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 import { TProduct } from '../types/product';
 
 // Thay đổi URL này thành Render URL của bạn
-const API_BASE_URL = 'https://tymex-mock-api.onrender.com';
+const API_BASE_URL = 'https://tymex-mock-server-blr0.onrender.com';
 
 // Define interface for API responses
 interface ProductsResponse {
