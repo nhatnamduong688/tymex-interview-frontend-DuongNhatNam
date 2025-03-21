@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useQueryParams } from '../hooks/useQueryParams';
 
 // Define product type
 export interface Product {
@@ -11,6 +12,14 @@ export interface Product {
   tags: string[];
 }
 
+// Define filter type
+export interface ProductFilter {
+  category?: string | null;
+  categories?: string[];
+  tags?: string[];
+  search?: string;
+}
+
 // Define context type
 interface ProductsContextType {
   products: Product[];
@@ -19,9 +28,12 @@ interface ProductsContextType {
   filteredProducts: Product[];
   selectedCategory: string | null;
   selectedTags: string[];
-  setSelectedCategory: (category: string | null) => void;
+  filter: ProductFilter;
+  setFilter: (filter: ProductFilter) => void;
+  updateCategory: (category: string | null) => void;
   addTag: (tag: string) => void;
   removeTag: (tag: string) => void;
+  setSearch: (search: string) => void;
   clearFilters: () => void;
 }
 
@@ -33,9 +45,12 @@ const ProductsContext = createContext<ProductsContextType>({
   filteredProducts: [],
   selectedCategory: null,
   selectedTags: [],
-  setSelectedCategory: () => {},
+  filter: {},
+  setFilter: () => {},
+  updateCategory: () => {},
   addTag: () => {},
   removeTag: () => {},
+  setSearch: () => {},
   clearFilters: () => {},
 });
 
@@ -86,6 +101,47 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [error] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [filter, setFilter] = useState<ProductFilter>({
+    category: null,
+    categories: [],
+    tags: [],
+    search: '',
+  });
+
+  const { getParams } = useQueryParams();
+
+  // Initialize filter from URL params when component mounts
+  useEffect(() => {
+    const params = getParams();
+    const initialFilter: ProductFilter = {
+      category: null,
+      categories: [],
+      tags: [],
+      search: '',
+    };
+
+    if (params.categories) {
+      initialFilter.categories = Array.isArray(params.categories)
+        ? params.categories
+        : [params.categories];
+    }
+
+    if (params.tags) {
+      initialFilter.tags = Array.isArray(params.tags)
+        ? params.tags
+        : [params.tags];
+    }
+
+    if (params.search) {
+      initialFilter.search = params.search as string;
+    }
+
+    if (params.category) {
+      initialFilter.category = params.category as string;
+    }
+
+    setFilter(initialFilter);
+  }, [getParams]);
 
   // Filter products based on selected category and tags
   const filteredProducts = products.filter((product) => {
@@ -102,22 +158,55 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
     return true;
   });
 
+  // Update category
+  const updateCategory = (category: string | null) => {
+    setFilter(prev => ({
+      ...prev,
+      category,
+    }));
+  };
+
   // Add a tag to the filter
   const addTag = (tag: string) => {
-    if (!selectedTags.includes(tag)) {
-      setSelectedTags([...selectedTags, tag]);
-    }
+    setFilter(prev => {
+      const currentTags = prev.tags || [];
+      if (!currentTags.includes(tag)) {
+        return {
+          ...prev,
+          tags: [...currentTags, tag],
+        };
+      }
+      return prev;
+    });
   };
 
   // Remove a tag from the filter
   const removeTag = (tag: string) => {
-    setSelectedTags(selectedTags.filter((t) => t !== tag));
+    setFilter(prev => {
+      const currentTags = prev.tags || [];
+      return {
+        ...prev,
+        tags: currentTags.filter(t => t !== tag),
+      };
+    });
+  };
+  
+  // Set search term
+  const setSearch = (search: string) => {
+    setFilter(prev => ({
+      ...prev,
+      search,
+    }));
   };
 
   // Clear all filters
   const clearFilters = () => {
-    setSelectedCategory(null);
-    setSelectedTags([]);
+    setFilter({
+      category: null,
+      categories: [],
+      tags: [],
+      search: '',
+    });
   };
 
   return (
@@ -129,9 +218,12 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
         filteredProducts,
         selectedCategory,
         selectedTags,
-        setSelectedCategory,
+        filter,
+        setFilter,
+        updateCategory,
         addTag,
         removeTag,
+        setSearch,
         clearFilters,
       }}
     >
@@ -141,4 +233,4 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
 };
 
 // Custom hook to use the products context
-export const useProducts = () => useContext(ProductsContext); 
+export const useProductsContext = () => useContext(ProductsContext); 

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Button, Drawer, Space, Radio, Checkbox, Divider, Typography } from 'antd';
+import { Button, Drawer, Space, Radio, Checkbox, Divider, Typography, Input } from 'antd';
 import { FilterOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import type { RadioChangeEvent } from 'antd';
-import { useProducts } from '../../../contexts/productsContext';
+import { useProductsContext } from '../../../contexts/productsContext';
 
 const { Title } = Typography;
+const { Search } = Input;
 
 const FilterButton = styled(Button)`
   margin-bottom: 16px;
@@ -34,13 +35,16 @@ const popularTags = [
 export const FilterMobile: React.FC = () => {
   const [open, setOpen] = useState(false);
   const { 
-    selectedCategory, 
-    selectedTags, 
-    setSelectedCategory, 
+    filter,
+    updateCategory, 
     addTag, 
-    removeTag, 
+    removeTag,
+    setSearch,
     clearFilters 
-  } = useProducts();
+  } = useProductsContext();
+
+  const selectedCategory = filter.category;
+  const selectedTags = filter.tags || [];
 
   const showDrawer = () => {
     setOpen(true);
@@ -51,7 +55,7 @@ export const FilterMobile: React.FC = () => {
   };
 
   const handleCategoryChange = (e: RadioChangeEvent) => {
-    setSelectedCategory(e.target.value);
+    updateCategory(e.target.value);
   };
 
   const handleTagChange = (tag: string, checked: boolean) => {
@@ -60,6 +64,10 @@ export const FilterMobile: React.FC = () => {
     } else {
       removeTag(tag);
     }
+  };
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
   };
 
   return (
@@ -81,7 +89,7 @@ export const FilterMobile: React.FC = () => {
           <Space>
             <Button 
               onClick={clearFilters}
-              disabled={!selectedCategory && selectedTags.length === 0}
+              disabled={!selectedCategory && selectedTags.length === 0 && !filter.search}
             >
               Clear
             </Button>
@@ -91,6 +99,15 @@ export const FilterMobile: React.FC = () => {
           </Space>
         }
       >
+        <FilterSection>
+          <Title level={5}>Search</Title>
+          <Search
+            placeholder="Search products..."
+            onSearch={handleSearch}
+            style={{ width: '100%' }}
+          />
+        </FilterSection>
+        
         <FilterSection>
           <Title level={5}>Categories</Title>
           <Radio.Group 

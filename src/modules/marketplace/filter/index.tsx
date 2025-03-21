@@ -1,10 +1,12 @@
 import React from 'react';
-import { Card, Typography, Divider, Radio, Space, Button, Checkbox } from 'antd';
+import { Card, Typography, Divider, Radio, Space, Button, Checkbox, Input } from 'antd';
 import type { RadioChangeEvent } from 'antd';
 import styled from 'styled-components';
-import { useProducts } from '../../../contexts/productsContext';
+import { SearchOutlined } from '@ant-design/icons';
+import { useProductsContext } from '../../../contexts/productsContext';
 
 const { Title } = Typography;
+const { Search } = Input;
 
 const FilterCard = styled(Card)`
   position: sticky;
@@ -31,16 +33,19 @@ const popularTags = [
 
 export const Filter: React.FC = () => {
   const { 
-    selectedCategory, 
-    selectedTags, 
-    setSelectedCategory, 
+    filter,
+    updateCategory, 
     addTag, 
-    removeTag, 
+    removeTag,
+    setSearch,
     clearFilters 
-  } = useProducts();
+  } = useProductsContext();
+
+  const selectedCategory = filter.category;
+  const selectedTags = filter.tags || [];
 
   const handleCategoryChange = (e: RadioChangeEvent) => {
-    setSelectedCategory(e.target.value);
+    updateCategory(e.target.value);
   };
 
   const handleTagChange = (tag: string, checked: boolean) => {
@@ -51,10 +56,23 @@ export const Filter: React.FC = () => {
     }
   };
 
+  const handleSearch = (value: string) => {
+    setSearch(value);
+  };
+
   return (
     <FilterCard>
       <Title level={4}>Filters</Title>
       <Divider />
+
+      <FilterSection>
+        <Title level={5}>Search</Title>
+        <Search
+          placeholder="Search products..."
+          onSearch={handleSearch}
+          style={{ width: '100%' }}
+        />
+      </FilterSection>
 
       <FilterSection>
         <Title level={5}>Categories</Title>
@@ -90,7 +108,7 @@ export const Filter: React.FC = () => {
       <Button 
         type="default" 
         onClick={clearFilters}
-        disabled={!selectedCategory && selectedTags.length === 0}
+        disabled={!selectedCategory && selectedTags.length === 0 && !filter.search}
       >
         Clear Filters
       </Button>

@@ -3,7 +3,7 @@ import { Col, Row } from "antd";
 import { BannerSection } from "./banner-section";
 import { Filter } from "./filter";
 import { FilterMobile } from "./filter-mobile";
-import { useBreakpoint } from "../../hooks";
+import { useBreakpoint } from "../../hooks/useBreakpoint";
 import { TagCategories } from "./tag-categories";
 import { ProductList } from "./product-list";
 import { ProductsProvider } from "../../contexts/productsContext";
@@ -27,7 +27,7 @@ const ProductListWrapper = styled(Col)`
   }
 `;
 
-export const MarketPlaceModule: React.FC = () => {
+export const MarketPlaceModule = () => {
   const { isCollapsed } = useBreakpoint();
 
   return (
