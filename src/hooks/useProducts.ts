@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { TProduct } from '../types/Product';
+import { TProduct } from '../types/product';
 import { productService } from '../services/api';
 
 interface UseProductsProps {

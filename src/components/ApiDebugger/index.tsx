@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { productService } from '../../services/api';
-import { TProduct } from '../../types/Product';
+import { TProduct } from '../../types/product';
 
 // Styled components
 const DebugContainer = styled.div<{ isVisible: boolean }>`
@@ -141,7 +141,7 @@ export const ApiDebugger: React.FC = () => {
       }
       
       // Extract base URL
-      setApiUrl(process.env.REACT_APP_API_URL || 'http://localhost:5005');
+      setApiUrl(import.meta.env.VITE_API_URL || 'https://tymex-mock-api.onrender.com');
       
     } catch (err) {
       setApiStatus('disconnected');
