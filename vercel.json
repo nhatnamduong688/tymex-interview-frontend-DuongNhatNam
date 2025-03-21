@@ -1,12 +1,19 @@
 {
+  "framework": "vite",
   "buildCommand": "yarn build",
   "outputDirectory": "dist",
   "installCommand": "yarn install",
-  "framework": "vite",
-  "rewrites": [
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  },
+  "trailingSlash": false,
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html",
+      "continue": true
     }
   ]
 }

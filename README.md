@@ -1,54 +1,95 @@
-# React + TypeScript + Vite
+# Tymex MarketPlace Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A TypeScript React application for a digital marketplace, using styled-components, Ant Design, and modern front-end practices.
 
-Currently, two official plugins are available:
+## Setup and Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Prerequisites
 
-## Expanding the ESLint configuration
+- Node.js (v16 or newer)
+- Yarn package manager
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Installation
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+1. Clone the repository
+
+```bash
+git clone <repository-url>
+cd tymex-interview-frontend-DuongNhatNam
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Install dependencies
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+yarn install
+```
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+3. Run development server
+
+```bash
+yarn dev
+```
+
+4. Build for production
+
+```bash
+yarn build
+```
+
+## Deploy to Vercel
+
+### Method 1: Automatic Deployment (Recommended)
+
+1. Connect your GitHub repository to Vercel
+2. Configure the build settings:
+   - Framework preset: Vite
+   - Build command: `yarn build`
+   - Output directory: `dist`
+   - Install command: `yarn install`
+
+### Method 2: Manual Deployment
+
+1. Install Vercel CLI
+
+```bash
+npm i -g vercel
+```
+
+2. Login to Vercel
+
+```bash
+vercel login
+```
+
+3. Deploy the application
+
+```bash
+vercel
+```
+
+## Troubleshooting Deployment Issues
+
+If you encounter TypeScript errors during deployment:
+
+1. Ensure all dependencies are properly installed, including dev dependencies
+
+```bash
+yarn install
+```
+
+2. Try a local build to check for errors
+
+```bash
+yarn build
+```
+
+3. Check for case sensitivity issues in imports
+
+   - Vercel deployments are case-sensitive
+   - Ensure import paths match the exact case of the file/folder names
+
+4. If using lodash modules, ensure they're installed along with their type definitions
+
+```bash
+yarn add lodash.debounce @types/lodash.debounce
 ```
