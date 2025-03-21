@@ -19,6 +19,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
+    "@types/lodash.debounce": "^4.0.9",
     "@types/nprogress": "^0.2.3",
     "antd": "^5.24.4",
     "happy-dom": "^17.4.4",

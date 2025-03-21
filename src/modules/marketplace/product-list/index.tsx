@@ -1,76 +1,126 @@
-import React from 'react';
-import { Row, Col, Card, Typography, Empty, Button, Flex, List } from 'antd';
-import { ShoppingCartOutlined } from '@ant-design/icons';
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { Empty, Grid, List, Skeleton } from "antd";
+import VirtualList from 'rc-virtual-list';
 import styled from 'styled-components';
-import { useProducts } from '../../../contexts/productsContext';
 import { ProductCart } from "../product-cart";
 import { useProduct } from "./hook";
-import { Button as CustomButton } from "../../../components/Button";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 
-const { Title, Text } = Typography;
+const { useBreakpoint } = Grid;
 
-const ProductCard = styled(Card)`
-  margin-bottom: 16px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+const ContainerHeight = 800;
+
+const GridStyled = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  position: relative;
+  
+  @media (max-width: 1199px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  @media (max-width: 991px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (max-width: 575px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const LoadMoreButtonWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 16px;
+`;
+
+const LoadMoreButton = styled.button`
+  background: linear-gradient(91.47deg, rgba(218, 69, 143, 0.3) -6%, rgba(218, 52, 221, 0.3) 113.05%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 12px 24px;
+  transition: opacity 0.2s;
   
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    opacity: 0.8;
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 `;
 
-const ProductImage = styled.div`
-  height: 200px;
-  background-color: #f0f0f0;
+const EmptyContainer = styled.div`
+  width: 100%;
+  height: 400px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  font-size: 3rem;
-  color: #aaa;
-`;
-
-const PriceTag = styled(Text)`
-  font-size: 18px;
-  font-weight: 700;
-`;
-
-const ProductListContainer = styled.div`
-  .ant-empty {
-    .ant-typography {
-      background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      color: transparent;
-      margin-top: 8px;
-    }
+  align-items: center;
+  
+  .ant-empty-image {
+    height: 120px;
   }
-
-  .loading-spinner {
-    width: 100%;
-    height: 500px;
-  }
-`;
-
-const LoadMoreButton = styled(Flex)`
-  margin: 55px auto 0 !important;
-
-  .ant-btn {
-    width: 160px;
+  
+  .ant-empty-description {
+    color: #89888b;
+    font-size: 16px;
   }
 `;
 
 export const ProductList: React.FC = () => {
-  const { 
-    dataProduct, 
-    hasMore, 
-    fetchNextPage, 
-    isLoading, 
-    isFetchingNextPage,
-    isError,
-    error 
-  } = useProduct();
+  const { dataProduct, hasMore, fetchNextPage, isLoading, isFetchingNextPage, isError } = useProduct();
+  const loadingRef = useRef<HTMLDivElement>(null);
+  const screens = useBreakpoint();
+  const [columnCount, setColumnCount] = useState(4);
+
+  // Update columns based on breakpoints
+  useEffect(() => {
+    if (screens.xs) {
+      setColumnCount(1);
+    } else if (screens.sm) {
+      setColumnCount(2);
+    } else if (screens.lg) {
+      setColumnCount(3);
+    } else {
+      setColumnCount(4);
+    }
+  }, [screens]);
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (loadingRef.current) {
+      observer.observe(loadingRef.current);
+    }
+
+    return () => {
+      if (loadingRef.current) {
+        observer.unobserve(loadingRef.current);
+      }
+    };
+  }, [fetchNextPage, hasMore, isLoading, isFetchingNextPage]);
+
+  // Handle manual load more
+  const handleLoadMore = useCallback(() => {
+    if (!isLoading && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, isLoading, isFetchingNextPage]);
 
   if (isLoading && dataProduct.length === 0) {
     return <LoadingSpinner />;
@@ -78,68 +128,44 @@ export const ProductList: React.FC = () => {
 
   if (isError) {
     return (
-      <Empty
-        description={
-          <Typography.Title level={4}>
-            Error loading products: {error instanceof Error ? error.message : 'Unknown error'}
-          </Typography.Title>
-        }
-      />
+      <EmptyContainer>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="Error loading products. Please try again later."
+        />
+      </EmptyContainer>
     );
   }
 
   if (dataProduct.length === 0) {
     return (
-      <Empty
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description={
-          <Typography.Title level={4}>
-            No items found
-          </Typography.Title>
-        }
-      />
+      <EmptyContainer>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="No products found."
+        />
+      </EmptyContainer>
     );
   }
 
   return (
-    <ProductListContainer>
-      <List
-        grid={{
-          gutter: 16,
-          xs: 2,
-          sm: 2,
-          md: 2,
-          lg: 3,
-          xl: 3,
-          xxl: 4,
-        }}
-        itemLayout="horizontal"
-        rowKey={(product) => product.created}
-        dataSource={dataProduct}
-        renderItem={(product) => (
-          <List.Item>
-            <ProductCart data={product} />
-          </List.Item>
-        )}
-      />
+    <>
+      <GridStyled>
+        {dataProduct.map((product) => (
+          <ProductCart key={product.id} product={product} />
+        ))}
+      </GridStyled>
       
-      {isFetchingNextPage && <LoadingSpinner />}
-      
-      {hasMore && !isFetchingNextPage && (
-        <LoadMoreButton
-          align="center"
-          justify="center"
-        >
-          <CustomButton
-            loading={isLoading}
-            onClick={() => fetchNextPage()}
-            type="primary"
-            size="large"
+      {hasMore && (
+        <LoadMoreButtonWrapper ref={loadingRef}>
+          <LoadMoreButton 
+            onClick={handleLoadMore} 
+            disabled={isLoading || isFetchingNextPage}
           >
-            View more
-          </CustomButton>
-        </LoadMoreButton>
+            {isFetchingNextPage ? "Loading..." : "Load More"}
+          </LoadMoreButton>
+        </LoadMoreButtonWrapper>
       )}
-    </ProductListContainer>
+    </>
   );
 }; 

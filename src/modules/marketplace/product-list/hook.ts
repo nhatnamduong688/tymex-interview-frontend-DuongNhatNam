@@ -1,68 +1,78 @@
 import { useState, useEffect } from 'react';
-import { getListProduct } from "../../../server/product";
-import { useProductsContext } from "../../../contexts/productsContext";
+import { getListProduct } from '../../../server/product';
+import { TProduct } from '../../../types/product';
+import { useProductsContext } from '../../../contexts/productsContext';
 
-const DEFAULT_LIMIT = 12;
+interface UseProductReturn {
+  dataProduct: TProduct[];
+  hasMore: boolean;
+  fetchNextPage: () => void;
+  isLoading: boolean;
+  isFetchingNextPage: boolean;
+  isError: boolean;
+  error: Error | null;
+}
 
-export const useProduct = () => {
-  const { filter } = useProductsContext();
-  const [dataProduct, setDataProduct] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [offset, setOffset] = useState(0);
-  const [isError, setIsError] = useState(false);
+export const useProduct = (): UseProductReturn => {
+  const [dataProduct, setDataProduct] = useState<TProduct[]>([]);
+  const [hasMore, setHasMore] = useState<boolean>(false);
+  const [nextOffset, setNextOffset] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Fetch initial data when filter changes
+  const { filter } = useProductsContext();
+  
+  const LIMIT = 8;
+
+  // Fetch initial data
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
-      setDataProduct([]);
-      setOffset(0);
       setIsError(false);
       setError(null);
       
       try {
-        const response = await getListProduct({ 
-          offset: 0, 
-          limit: DEFAULT_LIMIT, 
-          ...filter 
+        const response = await getListProduct({
+          offset: 0,
+          limit: LIMIT,
+          filter
         });
         
-        setDataProduct(response.data);
+        setDataProduct(response.data as TProduct[]);
         setHasMore(response.hasMore);
-        setOffset(response.nextOffset);
+        setNextOffset(response.nextOffset);
       } catch (err) {
         setIsError(true);
-        setError(err instanceof Error ? err : new Error('Unknown error'));
+        setError(err instanceof Error ? err : new Error('Unknown error occurred'));
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchInitialData();
+    fetchData();
   }, [filter]);
 
   // Function to fetch next page
   const fetchNextPage = async () => {
-    if (isFetchingNextPage || !hasMore) return;
+    if (!hasMore || isLoading || isFetchingNextPage) return;
     
     setIsFetchingNextPage(true);
     
     try {
-      const response = await getListProduct({ 
-        offset, 
-        limit: DEFAULT_LIMIT, 
-        ...filter 
+      const response = await getListProduct({
+        offset: nextOffset,
+        limit: LIMIT,
+        filter
       });
       
-      setDataProduct(prev => [...prev, ...response.data]);
+      setDataProduct(prev => [...prev, ...(response.data as TProduct[])]);
       setHasMore(response.hasMore);
-      setOffset(response.nextOffset);
+      setNextOffset(response.nextOffset);
     } catch (err) {
       setIsError(true);
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
     } finally {
       setIsFetchingNextPage(false);
     }
@@ -70,11 +80,11 @@ export const useProduct = () => {
 
   return {
     dataProduct,
-    isLoading,
     hasMore,
-    isFetchingNextPage,
     fetchNextPage,
+    isLoading,
+    isFetchingNextPage,
     isError,
-    error,
+    error
   };
 }; 

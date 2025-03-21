@@ -1,19 +1,24 @@
-import { ProductCategory, ProductTheme, ProductTier, SortType } from '@/enums/filter';
+import { ProductCategory, ProductTheme, ProductTier, SortType } from '../enums/filter';
+
+export interface Creator {
+  name: string;
+  isOnline: boolean;
+  avatar: string;
+}
 
 export type TProduct = {
-  id?: string;
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageBg: string;
+  imageItem: string;
+  category: string;
+  creator: Creator;
+  createdAt: string;
   tier: string;
   theme: string;
-  created: string;
-  backgroundItem: string;
-  item: string;
-  category: string;
-  nameItem: string;
-  price: number;
-  nameCreator: string;
-  statusOnline: boolean;
-  tags?: string[];
-  description?: string;
+  tags: string[];
 };
 
 export type TFilterProduct = {

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useQueryParams } from '../hooks/useQueryParams';
 import {TFilterProduct, TProduct} from "../types/product.ts";
+import { ProductCategory, ProductTheme, ProductTier } from '../enums/filter';
 
 // Define context type
 interface ProductsContextType {
@@ -14,78 +15,101 @@ interface ProductsContextType {
 }
 
 // Create context with default values
-const ProductsContext = createContext<ProductsContextType>({
+const defaultContextValue: ProductsContextType = {
   products: [],
   loading: false,
   error: null,
   filteredProducts: [],
-  filter: {},
+  filter: { categories: [] },
   setFilter: () => {},
   clearFilters: () => {},
-});
+};
+
+export const ProductsContext = createContext<ProductsContextType>(defaultContextValue);
 
 // Sample products data
 const sampleProducts: TProduct[] = [
   {
     id: '1',
-    nameItem: 'Digital Artwork #1',
-    description: 'A beautiful digital artwork',
-    price: 0.5,
-    backgroundItem: 'bg-item-1',
-    item: 'item-1',
-    category: 'Art',
-    nameCreator: 'Artist One',
-    statusOnline: true,
-    created: '2023-01-15',
-    tags: ['digital', 'art', 'collectible'],
+    name: 'Digital Artwork #1',
+    description: 'Beautiful digital artwork with vibrant colors',
+    price: 2.5,
+    imageBg: '/assets/img/product/bg-1.png',
+    imageItem: '/assets/img/product/item-1.png',
+    category: ProductCategory.Art,
+    creator: {
+      name: 'Artist One',
+      isOnline: true,
+      avatar: '/assets/img/avatar/avatar-1.png'
+    },
+    createdAt: new Date().toISOString(),
+    tier: ProductTier.Premium,
+    theme: ProductTheme.Dark,
+    tags: ['digital', 'art']
   },
   {
     id: '2',
-    nameItem: 'Virtual Land',
-    description: 'Prime location in the metaverse',
-    price: 3.2,
-    backgroundItem: 'bg-item-2',
-    item: 'item-2',
-    category: 'Real Estate',
-    nameCreator: 'Land Developer',
-    statusOnline: false,
-    created: '2023-02-10',
-    tags: ['land', 'metaverse', 'property'],
+    name: 'Virtual Land',
+    description: 'Own a piece of the metaverse with this virtual land',
+    price: 5.8,
+    imageBg: '/assets/img/product/bg-2.png',
+    imageItem: '/assets/img/product/item-2.png',
+    category: ProductCategory.RealEstate,
+    creator: {
+      name: 'Creator Studio',
+      isOnline: false,
+      avatar: '/assets/img/avatar/avatar-2.png'
+    },
+    createdAt: new Date().toISOString(),
+    tier: ProductTier.Basic,
+    theme: ProductTheme.Light,
+    tags: ['metaverse', 'property']
   },
   {
     id: '3',
-    nameItem: 'Game Character',
-    description: 'Rare character with special abilities',
-    price: 1.8,
-    backgroundItem: 'bg-item-3',
-    item: 'item-3',
-    category: 'Gaming',
-    nameCreator: 'Game Studio',
-    statusOnline: true,
-    created: '2023-03-05',
-    tags: ['game', 'character', 'rare'],
+    name: 'Game Character',
+    description: 'Unique game character with special abilities',
+    price: 1.2,
+    imageBg: '/assets/img/product/bg-3.png',
+    imageItem: '/assets/img/product/item-3.png',
+    category: ProductCategory.Gaming,
+    creator: {
+      name: 'Game Designer',
+      isOnline: true,
+      avatar: '/assets/img/avatar/avatar-3.png'
+    },
+    createdAt: new Date().toISOString(),
+    tier: ProductTier.Premium,
+    theme: ProductTheme.Dark,
+    tags: ['game', 'character']
   },
   {
     id: '4',
-    nameItem: 'Music Album',
-    description: 'Exclusive music album ownership',
+    name: 'Music Album',
+    description: 'Exclusive digital music album with bonus tracks',
     price: 0.8,
-    backgroundItem: 'bg-item-4',
-    item: 'item-4',
-    category: 'Music',
-    nameCreator: 'Musician',
-    statusOnline: true,
-    created: '2023-04-20',
-    tags: ['music', 'audio', 'exclusive'],
-  },
+    imageBg: '/assets/img/product/bg-4.png',
+    imageItem: '/assets/img/product/item-4.png',
+    category: ProductCategory.Music,
+    creator: {
+      name: 'Digital Musician',
+      isOnline: false,
+      avatar: '/assets/img/avatar/avatar-4.png'
+    },
+    createdAt: new Date().toISOString(),
+    tier: ProductTier.Basic,
+    theme: ProductTheme.Light,
+    tags: ['music', 'audio']
+  }
 ];
 
 // Create Provider component
 export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [products] = useState<TProduct[]>(sampleProducts);
+  const [filteredProducts, setFilteredProducts] = useState<TProduct[]>(sampleProducts);
   const [loading] = useState<boolean>(false);
   const [error] = useState<string | null>(null);
-  const [filter, setFilter] = useState<TFilterProduct>({});
+  const [filter, setFilter] = useState<TFilterProduct>({ categories: [] });
 
   const { getParams } = useQueryParams();
 
@@ -105,47 +129,56 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, [getParams]);
 
   // Apply filters to products
-  const filteredProducts = products.filter((product) => {
-    // Filter by keyword search
-    if (filter.keyword && product.nameItem) {
-      const keyword = filter.keyword.toLowerCase();
-      const productName = product.nameItem.toLowerCase();
-      if (!productName.includes(keyword)) {
-        return false;
-      }
+  useEffect(() => {
+    let result = [...products];
+
+    // Apply keyword filter
+    if (filter.keyword) {
+      result = result.filter(product => {
+        const productName = product.name.toLowerCase();
+        const keyword = filter.keyword!.toLowerCase();
+        const description = product.description?.toLowerCase() || '';
+        return productName.includes(keyword) || description.includes(keyword);
+      });
     }
-    
-    // Filter by price range
+
+    // Apply category filter
+    if (filter.categories && filter.categories.length > 0) {
+      result = result.filter(product => 
+        filter.categories?.includes(product.category)
+      );
+    }
+
+    // Apply tier filter
+    if (filter.tier) {
+      result = result.filter(product => product.tier === filter.tier);
+    }
+
+    // Apply theme filter
+    if (filter.theme) {
+      result = result.filter(product => product.theme === filter.theme);
+    }
+
+    // Apply price range filter
     if (filter.priceRange && filter.priceRange.length === 2) {
       const [min, max] = filter.priceRange;
-      if (product.price < min || product.price > max) {
-        return false;
-      }
+      result = result.filter(product => product.price >= min && product.price <= max);
     }
-    
-    // Filter by categories if any are selected
-    if (filter.categories) {
-      // Kiểm tra nếu categories là string, chuyển về array
-      const categoriesArray = Array.isArray(filter.categories) 
-        ? filter.categories 
-        : typeof filter.categories === 'string' 
-          ? [filter.categories] 
-          : [];
-          
-      if (categoriesArray.length > 0) {
-        if (!categoriesArray.some(cat => cat === product.category)) {
-          return false;
-        }
-      }
-    }
-    
-    return true;
-  });
+
+    setFilteredProducts(result);
+  }, [filter, products]);
 
   // Clear all filters
   const clearFilters = () => {
-    setFilter({});
+    setFilter({ categories: [] });
   };
+
+  const handleSetFilter = useCallback((newFilter: TFilterProduct) => {
+    setFilter(prevFilter => ({
+      ...newFilter,
+      categories: newFilter.categories || prevFilter.categories || [],
+    }));
+  }, []);
 
   return (
     <ProductsContext.Provider
@@ -155,7 +188,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
         error,
         filteredProducts,
         filter,
-        setFilter,
+        setFilter: handleSetFilter,
         clearFilters,
       }}
     >
@@ -165,4 +198,10 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
 };
 
 // Custom hook to use the products context
-export const useProductsContext = () => useContext(ProductsContext); 
+export const useProductsContext = () => {
+  const context = useContext(ProductsContext);
+  if (context === undefined) {
+    throw new Error('useProductsContext must be used within a ProductsProvider');
+  }
+  return context;
+}; 

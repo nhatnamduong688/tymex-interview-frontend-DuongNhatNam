@@ -1,83 +1,103 @@
-import { ProductFilter } from '../contexts/productsContext';
+import { TFilterProduct, TProduct } from "../types/product";
+import dummyProducts from "./product-data";
 
-// Sample data for products
-const products = Array.from({ length: 50 }, (_, index) => ({
-  id: `product-${index + 1}`,
-  name: `Product ${index + 1}`,
-  description: `This is a sample description for product ${index + 1}. It might have some interesting features and details.`,
-  price: Number((Math.random() * 10 + 0.1).toFixed(2)),
-  imageUrl: '',
-  category: ['Art', 'Gaming', 'Music', 'Real Estate'][Math.floor(Math.random() * 4)],
-  tags: [
-    ['collectible', 'digital', 'art'][Math.floor(Math.random() * 3)],
-    ['rare', 'metaverse', 'property', 'game'][Math.floor(Math.random() * 4)]
-  ],
-  created: Date.now() - Math.floor(Math.random() * 1000000)
-}));
-
-interface ProductParams {
+interface ListParams {
   offset: number;
   limit: number;
-  category?: string | null;
-  categories?: string[];
-  tags?: string[];
-  search?: string;
+  filter: TFilterProduct;
 }
 
-interface ProductResponse {
-  data: typeof products;
+interface ListResponse {
+  data: TProduct[];
+  total: number;
   hasMore: boolean;
   nextOffset: number;
-  total: number;
 }
 
-export const getListProduct = async (params: ProductParams): Promise<ProductResponse> => {
-  const { offset, limit, category, categories, tags, search } = params;
-  
-  // Add artificial delay to simulate network request
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // Filter products based on parameters
-  let filteredProducts = [...products];
-  
-  // Filter by single category
-  if (category) {
-    filteredProducts = filteredProducts.filter(product => 
-      product.category === category
-    );
+export const getListProduct = ({
+  offset = 0,
+  limit = 12,
+  filter,
+}: ListParams): ListResponse => {
+  let filteredProducts = [...dummyProducts];
+
+  try {
+    // Filter by keyword
+    if (filter.keyword) {
+      const keyword = filter.keyword.toLowerCase();
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          product.name.toLowerCase().includes(keyword) ||
+          product.description.toLowerCase().includes(keyword)
+      );
+    }
+
+    // Filter by price range
+    if (filter.priceRange && filter.priceRange.length === 2) {
+      const [min, max] = filter.priceRange;
+      filteredProducts = filteredProducts.filter(
+        (product) => product.price >= min && product.price <= max
+      );
+    }
+
+    // Filter by tier
+    if (filter.tier) {
+      filteredProducts = filteredProducts.filter(
+        (product) => product.tier === filter.tier
+      );
+    }
+
+    // Filter by theme
+    if (filter.theme) {
+      filteredProducts = filteredProducts.filter(
+        (product) => product.theme === filter.theme
+      );
+    }
+
+    // Filter by multiple categories
+    if (filter.categories && filter.categories.length > 0) {
+      filteredProducts = filteredProducts.filter(product => 
+        filter.categories && filter.categories.includes(product.category)
+      );
+    }
+
+    // Sort by time
+    if (filter.sortTime) {
+      filteredProducts.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return filter.sortTime === "asc" ? dateA - dateB : dateB - dateA;
+      });
+    }
+
+    // Sort by price
+    if (filter.sortPrice) {
+      filteredProducts.sort((a, b) => {
+        return filter.sortPrice === "asc"
+          ? a.price - b.price
+          : b.price - a.price;
+      });
+    }
+
+    // Pagination
+    const total = filteredProducts.length;
+    const hasMore = offset + limit < total;
+    const nextOffset = hasMore ? offset + limit : total;
+    const data = filteredProducts.slice(offset, offset + limit);
+
+    return {
+      data,
+      total,
+      hasMore,
+      nextOffset,
+    };
+  } catch (error) {
+    console.error("Error filtering products:", error);
+    return {
+      data: [],
+      total: 0,
+      hasMore: false,
+      nextOffset: 0,
+    };
   }
-  
-  // Filter by multiple categories
-  if (categories && categories.length > 0) {
-    filteredProducts = filteredProducts.filter(product => 
-      categories.includes(product.category)
-    );
-  }
-  
-  if (tags && tags.length > 0) {
-    filteredProducts = filteredProducts.filter(product => 
-      tags.every(tag => product.tags.includes(tag))
-    );
-  }
-  
-  if (search) {
-    const searchLower = search.toLowerCase();
-    filteredProducts = filteredProducts.filter(product => 
-      product.name.toLowerCase().includes(searchLower) || 
-      product.description.toLowerCase().includes(searchLower)
-    );
-  }
-  
-  // Calculate pagination
-  const total = filteredProducts.length;
-  const paginatedProducts = filteredProducts.slice(offset, offset + limit);
-  const hasMore = offset + limit < total;
-  const nextOffset = hasMore ? offset + limit : offset;
-  
-  return {
-    data: paginatedProducts,
-    hasMore,
-    nextOffset,
-    total
-  };
 }; 

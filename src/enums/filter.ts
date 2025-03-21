@@ -9,6 +9,10 @@ export enum ProductCategory {
   Mythic = "Mythic",
   Epic = "Epic",
   Rare = "Rare",
+  Art = "Art",
+  RealEstate = "Real Estate",
+  Gaming = "Gaming",
+  Music = "Music"
 }
 
 export enum ProductTheme {

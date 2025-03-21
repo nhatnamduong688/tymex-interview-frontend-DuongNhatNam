@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button, ConfigProvider, Form, Input, Select, Slider } from "antd";
+import type { FormProps } from 'antd';
 import { CloseCircleFilled, SearchOutlined } from "@ant-design/icons";
 import styled from 'styled-components';
 import {
@@ -15,7 +16,8 @@ import { useBreakpoint } from "../../../hooks/useBreakpoint";
 import { useQueryParams } from "../../../hooks/useQueryParams";
 import { useProductsContext } from '../../../contexts/productsContext';
 
-const FilterContainer = styled(Form)`
+// Define a type-safe form component
+const StyledForm = styled(Form)<FormProps<TFilterProduct>>`
   background: #3a384199 !important;
   border-radius: 10px;
   border: none !important;
@@ -123,7 +125,7 @@ const optionsCategory = Object.values(ProductCategory).map((item) => ({
   value: item,
 }));
 
-export const Filter = () => {
+export const Filter: React.FC = () => {
   const [form] = Form.useForm<TFilterProduct>();
 
   const [updateFilter, setUpdateFilter] = useState(false);
@@ -148,18 +150,26 @@ export const Filter = () => {
     setUpdateFilter(true);
     setFilter({
       ...value,
-      categories: filter.categories || [],
     });
+    
+    // Chuyển đổi các giá trị để phù hợp với kiểu string | string[]
+    const paramValues: Record<string, string | string[]> = {};
+    
+    if (value.keyword) paramValues.keyword = value.keyword;
+    if (value.priceRange) paramValues.priceRange = value.priceRange.map(String);
+    if (value.tier) paramValues.tier = value.tier;
+    if (value.theme) paramValues.theme = value.theme;
+    if (value.sortTime) paramValues.sortTime = value.sortTime;
+    if (value.sortPrice) paramValues.sortPrice = value.sortPrice;
+    
+    if (isCollapsed && value.categories) {
+      paramValues.categories = value.categories;
+    }
+    
     setParams(
       {
         ...params,
-        keyword: value.keyword,
-        priceRange: value.priceRange as unknown as string[],
-        tier: value.tier,
-        theme: value.theme,
-        sortTime: value.sortTime,
-        sortPrice: value.sortPrice,
-        ...(isCollapsed && { categories: value.categories }),
+        ...paramValues
       },
       { replace: false }
     );
@@ -167,7 +177,7 @@ export const Filter = () => {
 
   const resetFilter = () => {
     form.resetFields();
-    setFilter({});
+    setFilter({ categories: [] });
     removeParams([
       "keyword",
       "priceRange",
@@ -187,7 +197,7 @@ export const Filter = () => {
 
   return (
     <ConfigProvider theme={themeFilter}>
-      <FilterContainer
+      <StyledForm
         form={form}
         labelCol={{ span: 24 }}
         onFinish={onSubmit}
@@ -267,7 +277,7 @@ export const Filter = () => {
             Search
           </Button>
         </div>
-      </FilterContainer>
+      </StyledForm>
     </ConfigProvider>
   );
 }; 
