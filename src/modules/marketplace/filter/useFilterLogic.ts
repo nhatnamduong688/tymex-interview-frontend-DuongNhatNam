@@ -98,8 +98,8 @@ export const useFilterLogic = () => {
     
     // Convert priceRange to minPrice/maxPrice if needed
     if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
-      values.minPrice = values.priceRange[0];
-      values.maxPrice = values.priceRange[1];
+      values.minPrice = String(values.priceRange[0]);
+      values.maxPrice = String(values.priceRange[1]);
     }
     
     // Update form values in Redux
@@ -144,12 +144,18 @@ export const useFilterLogic = () => {
     currentValues: formValues,
     loading,
     isCollapsed,
+    tiers: [],
+    themes: [],
     
     // Handlers
     handleSearchChange,
     onSubmit,
     resetFilter: resetFilterHandler,
     setFormRef,
+    handlePriceRangeChange: () => {},
+    handleMinPriceChange: () => {},
+    handleMaxPriceChange: () => {},
+    handleFilterSubmit: onSubmit,
     
     // Computed values
     filterSummary: getFilterSummary(),

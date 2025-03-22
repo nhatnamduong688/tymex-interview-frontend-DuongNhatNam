@@ -47,6 +47,8 @@ export interface FilterState {
     sortPrice?: string;
   };
   isFilterVisible: boolean;
+  tiers: string[];
+  themes: string[];
 }
 
 // Initial state
@@ -76,6 +78,8 @@ const initialState: FilterState = {
     sortPrice: '',
   },
   isFilterVisible: false,
+  tiers: [],
+  themes: [],
 };
 
 // Create the filter slice

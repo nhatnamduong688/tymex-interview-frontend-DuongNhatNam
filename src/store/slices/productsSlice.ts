@@ -59,12 +59,13 @@ export const fetchProducts = createAsyncThunk<
 export const fetchMoreProducts = createAsyncThunk<
   { data: TProduct[]; totalCount: number },
   void,
-  { rejectValue: string; state: { products: ProductsState } }
+  { rejectValue: string; state: { products: ProductsState; filter?: any } }
 >('products/fetchMoreProducts', async (_, { getState, rejectWithValue }) => {
   try {
     const state = getState();
     const { products } = state;
     const { page, limit, hasMore } = products;
+    // Handle the case where filter might not exist in state yet
     const filters = state.filter?.appliedFilters || {};
     
     console.log('fetchMoreProducts thunk called with:', {

@@ -64,7 +64,7 @@ export const useQueryParams = () => {
    * This method is kept for backward compatibility only
    */
   const setParams = useCallback(
-    (newParams: Record<string, string | string[]>, options: { replace?: boolean } = {}) => {
+    (newParams: Record<string, string | string[]>) => {
       // Check common filter parameters and dispatch Redux actions
       if (newParams.search && typeof newParams.search === 'string') {
         // Search filter

@@ -69,12 +69,12 @@ export const FilterForm: React.FC<FilterFormProps> = ({
         // Extract unique tiers
         const uniqueTiers = Array.from(new Set(
           response.data.map((product: any) => product.tier).filter(Boolean)
-        ));
+        )) as string[];
         
         // Extract unique themes
         const uniqueThemes = Array.from(new Set(
           response.data.map((product: any) => product.theme).filter(Boolean)
-        ));
+        )) as string[];
         
         setTiers(uniqueTiers);
         setThemes(uniqueThemes);

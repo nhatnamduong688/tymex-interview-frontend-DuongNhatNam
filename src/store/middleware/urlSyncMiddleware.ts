@@ -6,6 +6,7 @@ import {
   updateCategory,
   updateSearch
 } from '../slices/filterSlice';
+import { AnyAction } from '@reduxjs/toolkit';
 
 /**
  * Redux middleware that synchronizes URL parameters with the filter state
@@ -125,15 +126,17 @@ export const urlSyncMiddleware: Middleware = store => {
     
     // Listen for specific actions that should trigger URL updates
     if (
-      action.type === applyFilter.type ||
-      action.type === updateCategory.type ||
-      action.type === updateSearch.type
+      action && typeof action === 'object' && 'type' in action && (
+        action.type === applyFilter.type ||
+        action.type === updateCategory.type ||
+        action.type === updateSearch.type
+      )
     ) {
       updateUrlFromState(state);
     }
     
     // Reset URL when filters are reset
-    if (action.type === resetFilter.type) {
+    if (action && typeof action === 'object' && 'type' in action && action.type === resetFilter.type) {
       window.history.replaceState({}, '', window.location.pathname);
       previousSearch = '';
     }
