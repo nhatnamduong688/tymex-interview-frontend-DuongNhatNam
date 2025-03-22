@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { FilterForm } from './FilterForm';
 import { vi, describe, test, expect } from 'vitest';
 
-// Mock the components to prevent real rendering
+// Mock the antd components
 vi.mock('antd', () => {
   const Form = {
     Item: ({ children, name, label }) => (
@@ -27,6 +27,7 @@ vi.mock('antd', () => {
       onChange={onChange}
       data-allowclear={allowClear}
       defaultValue={defaultValue}
+      data-testid="input"
     />
   );
   
@@ -38,6 +39,7 @@ vi.mock('antd', () => {
       data-icon={icon ? 'has-icon' : ''} 
       data-htmltype={htmlType}
       data-loading={loading}
+      data-testid={children && children.toString().toLowerCase().replace(/\s+/g, '-')}
     >
       {children}
     </button>
@@ -47,6 +49,7 @@ vi.mock('antd', () => {
     <select 
       data-placeholder={placeholder} 
       data-allowclear={allowClear}
+      data-testid="select"
     >
       {children}
     </select>
@@ -66,7 +69,7 @@ vi.mock('antd', () => {
     />
   );
   
-  const Divider = () => <hr />;
+  const Divider = () => <hr data-testid="divider" />;
   
   const Row = ({ children, gutter }) => (
     <div data-testid="row" data-gutter={gutter}>
@@ -93,16 +96,45 @@ vi.mock('antd', () => {
   };
 });
 
+// Mock icons
 vi.mock('@ant-design/icons', () => ({
   SearchOutlined: () => <span data-testid="search-icon" />,
   ReloadOutlined: () => <span data-testid="reload-icon" />
+}));
+
+// Mock styled-components
+vi.mock('styled-components', () => ({
+  default: {
+    div: (props) => (args) => <div {...args} />,
+  }
+}));
+
+// Mock enums
+vi.mock('../../../enums/filter', () => ({
+  ProductTheme: {
+    Art: 'Art',
+    Game: 'Game',
+    Music: 'Music'
+  },
+  ProductTier: {
+    Free: 'Free',
+    Premium: 'Premium'
+  },
+  SortType: {
+    Ascending: 'asc',
+    Descending: 'desc'
+  }
 }));
 
 describe('FilterForm', () => {
   const mockForm = {
     resetFields: vi.fn(),
     setFieldsValue: vi.fn(),
-    getFieldValue: vi.fn(),
+    getFieldValue: vi.fn().mockImplementation((field) => {
+      if (field === 'priceRange') return [0, 200];
+      if (field === 'keyword') return 'test';
+      return null;
+    }),
     submit: vi.fn()
   };
   
@@ -115,6 +147,10 @@ describe('FilterForm', () => {
     currentValues: {}
   };
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   test('renders key form sections and buttons', () => {
     render(<FilterForm {...defaultProps} />);
     
@@ -125,14 +161,14 @@ describe('FilterForm', () => {
     expect(screen.getByText('Theme')).toBeInTheDocument();
     
     // Check for buttons
-    expect(screen.getByText('Reset')).toBeInTheDocument();
-    expect(screen.getByText('Apply Filters')).toBeInTheDocument();
+    expect(screen.getByTestId('reset')).toBeInTheDocument();
+    expect(screen.getByTestId('apply-filters')).toBeInTheDocument();
   });
 
   test('calls onResetFilter when reset button is clicked', () => {
     render(<FilterForm {...defaultProps} />);
     
-    fireEvent.click(screen.getByText('Reset'));
+    fireEvent.click(screen.getByTestId('reset'));
     
     expect(defaultProps.onResetFilter).toHaveBeenCalledTimes(1);
   });

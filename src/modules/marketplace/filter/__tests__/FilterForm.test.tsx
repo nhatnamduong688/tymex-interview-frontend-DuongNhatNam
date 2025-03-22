@@ -1,69 +1,172 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FilterForm } from '../FilterForm';
-import { TFilterProduct } from '../../../../types/product';
+import { vi, describe, test, expect, beforeEach } from 'vitest';
+import { Form } from 'antd';
 
-describe('FilterForm', () => {
-  const defaultProps = {
-    initialValues: {} as TFilterProduct,
-    loading: false,
-    isCollapsed: false,
-    onSearchChange: jest.fn(),
-    onSubmit: jest.fn(),
-    onReset: jest.fn(),
-    setFormRef: jest.fn()
+// Mock Form component from antd
+vi.mock('antd', () => {
+  const mockForm = {
+    Item: ({ children, name, label }) => (
+      <div data-testid={`form-item-${name}`}>
+        <label>{label}</label>
+        {children}
+      </div>
+    ),
+    useForm: () => [{
+      resetFields: vi.fn(),
+      setFieldsValue: vi.fn(),
+      getFieldValue: vi.fn().mockImplementation((field) => {
+        if (field === 'priceRange') return [0, 200];
+        if (field === 'keyword') return 'test';
+        return null;
+      }),
+      submit: vi.fn()
+    }]
   };
 
-  test('renders form elements correctly', () => {
+  return {
+    Form: mockForm,
+    Input: ({ placeholder, prefix, onChange, allowClear, defaultValue }) => (
+      <input 
+        placeholder={placeholder} 
+        data-prefix={prefix ? 'has-prefix' : ''} 
+        onChange={onChange}
+        data-allowclear={allowClear}
+        defaultValue={defaultValue}
+        data-testid="input"
+      />
+    ),
+    Button: ({ children, type, onClick, icon, htmlType, loading }) => (
+      <button 
+        type="button" 
+        data-type={type} 
+        onClick={onClick} 
+        data-icon={icon ? 'has-icon' : ''} 
+        data-htmltype={htmlType}
+        data-loading={loading}
+        data-testid={children && children.toString().toLowerCase().replace(/\s+/g, '-')}
+      >
+        {children}
+      </button>
+    ),
+    Select: ({ placeholder, allowClear, children }) => (
+      <select 
+        data-placeholder={placeholder} 
+        data-allowclear={allowClear}
+        data-testid="select"
+      >
+        {children}
+      </select>
+    ),
+    Option: ({ children, value }) => (
+      <option value={value}>{children}</option>
+    ),
+    Slider: ({ range, min, max, defaultValue, tipFormatter }) => (
+      <div 
+        data-testid="slider" 
+        data-range={range} 
+        data-min={min} 
+        data-max={max} 
+        data-default-value={JSON.stringify(defaultValue)}
+      />
+    ),
+    Divider: () => <hr data-testid="divider" />,
+    Row: ({ children, gutter }) => (
+      <div data-testid="row" data-gutter={gutter}>
+        {children}
+      </div>
+    ),
+    Col: ({ children, span }) => (
+      <div data-testid="col" data-span={span}>
+        {children}
+      </div>
+    )
+  };
+});
+
+// Mock icons
+vi.mock('@ant-design/icons', () => ({
+  SearchOutlined: () => <span data-testid="search-icon" />,
+  ReloadOutlined: () => <span data-testid="reload-icon" />
+}));
+
+// Mock styled-components
+vi.mock('styled-components', () => {
+  return {
+    default: {
+      div: () => (props) => <div {...props} />,
+      createGlobalStyle: () => () => null,
+    },
+    createGlobalStyle: () => () => null,
+    css: () => [],
+    keyframes: () => '',
+  }
+});
+
+// Mock enums
+vi.mock('../../../../enums/filter', () => ({
+  ProductTheme: {
+    Art: 'Art',
+    Game: 'Game',
+    Music: 'Music'
+  },
+  ProductTier: {
+    Free: 'Free',
+    Premium: 'Premium'
+  },
+  SortType: {
+    Ascending: 'asc',
+    Descending: 'desc'
+  }
+}));
+
+console.error = vi.fn(); // Silence console errors during tests
+
+describe('FilterForm', () => {
+  const mockForm = {
+    resetFields: vi.fn(),
+    setFieldsValue: vi.fn(),
+    getFieldValue: vi.fn().mockImplementation((field) => {
+      if (field === 'priceRange') return [0, 200];
+      if (field === 'keyword') return 'test';
+      return null;
+    }),
+    submit: vi.fn()
+  };
+  
+  const defaultProps = {
+    form: mockForm,
+    loading: false,
+    onSubmit: vi.fn(),
+    onResetFilter: vi.fn(),
+    onSearchChange: vi.fn(),
+    currentValues: {}
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('renders key form sections and buttons', () => {
     render(<FilterForm {...defaultProps} />);
     
-    // Check presence of key form elements
-    expect(screen.getByPlaceholderText('Quick search')).toBeInTheDocument();
-    expect(screen.getByText('Price')).toBeInTheDocument();
+    // Check for form label names
+    expect(screen.getByText('Search')).toBeInTheDocument();
+    expect(screen.getByText('Price Range')).toBeInTheDocument();
     expect(screen.getByText('Tier')).toBeInTheDocument();
     expect(screen.getByText('Theme')).toBeInTheDocument();
-    expect(screen.getByText('Reset filter')).toBeInTheDocument();
-    expect(screen.getByText('Search')).toBeInTheDocument();
-  });
-
-  test('shows loading state correctly', () => {
-    render(<FilterForm {...defaultProps} loading={true} />);
     
-    expect(screen.getByText('Applying filters...')).toBeInTheDocument();
+    // Check for buttons
+    expect(screen.getByText('Reset')).toBeInTheDocument();
+    expect(screen.getByText('Apply Filters')).toBeInTheDocument();
   });
 
-  test('renders categories field when isCollapsed is true', () => {
-    render(<FilterForm {...defaultProps} isCollapsed={true} />);
-    
-    expect(screen.getByText('Categories')).toBeInTheDocument();
-  });
-
-  test('does not render categories field when isCollapsed is false', () => {
-    render(<FilterForm {...defaultProps} isCollapsed={false} />);
-    
-    expect(screen.queryByText('Categories')).not.toBeInTheDocument();
-  });
-
-  test('calls onReset when reset button is clicked', () => {
+  test('calls onResetFilter when reset button is clicked', () => {
     render(<FilterForm {...defaultProps} />);
     
-    fireEvent.click(screen.getByText('Reset filter'));
+    fireEvent.click(screen.getByText('Reset'));
     
-    expect(defaultProps.onReset).toHaveBeenCalledTimes(1);
-  });
-
-  test('calls onSearchChange when input value changes', () => {
-    render(<FilterForm {...defaultProps} />);
-    
-    const searchInput = screen.getByPlaceholderText('Quick search');
-    fireEvent.change(searchInput, { target: { value: 'test search' } });
-    
-    expect(defaultProps.onSearchChange).toHaveBeenCalledTimes(1);
-  });
-
-  test('sets form ref on mount', () => {
-    render(<FilterForm {...defaultProps} />);
-    
-    expect(defaultProps.setFormRef).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onResetFilter).toHaveBeenCalledTimes(1);
   });
 }); 

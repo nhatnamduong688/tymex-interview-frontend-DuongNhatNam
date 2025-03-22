@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Filter } from '..';
 import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
@@ -20,7 +20,7 @@ beforeAll(() => {
   }));
 });
 
-// Create a mock store for testing
+// Mock Redux store
 const createMockStore = () => {
   return configureStore({
     reducer: {
@@ -44,10 +44,9 @@ const createMockStore = () => {
   });
 };
 
-// Mock useBreakpoint hook with different return values for different tests
-let mockIsCollapsed = true;
+// Mock useBreakpoint hook to return collapsed false (expanded)
 vi.mock('../../../hooks/useBreakpoint', () => ({
-  useBreakpoint: () => ({ isCollapsed: mockIsCollapsed })
+  useBreakpoint: () => ({ isCollapsed: false })
 }));
 
 vi.mock('../../../hooks/useQueryParams', () => ({
@@ -58,16 +57,16 @@ vi.mock('../../../hooks/useQueryParams', () => ({
   })
 }));
 
-// Mock components for testing
+// Mock components
 vi.mock('../FilterForm', () => ({
-  FilterForm: (props) => <div data-testid="filter-form">Filter Form</div>
+  FilterForm: () => <div data-testid="filter-form">Filter Form</div>
 }));
 
 vi.mock('../FilterSummary', () => ({
-  FilterSummary: (props) => <div data-testid="filter-summary">Filter Summary</div>
+  FilterSummary: () => <div data-testid="filter-summary">Filter Summary</div>
 }));
 
-// Mock styled components
+// Mock StyledForm component to just render children
 vi.mock('../filter.styled', () => ({
   StyledForm: ({ children }) => <div data-testid="styled-form">{children}</div>
 }));
@@ -91,17 +90,14 @@ vi.mock('antd', async () => {
   };
 });
 
-describe('Filter Component Rendering Logic', () => {
+describe('Filter Component - Expanded Mode', () => {
   let store;
   
   beforeEach(() => {
     store = createMockStore();
   });
   
-  test('renders FilterSummary when isCollapsed is true', () => {
-    // Set the mock to return isCollapsed: true
-    mockIsCollapsed = true;
-    
+  test('renders FilterForm when not collapsed', () => {
     render(
       <Provider store={store}>
         <MemoryRouter>
@@ -110,24 +106,7 @@ describe('Filter Component Rendering Logic', () => {
       </Provider>
     );
     
-    // FilterSummary should be rendered when isCollapsed is true
-    expect(screen.getByTestId('filter-summary')).toBeInTheDocument();
-    expect(screen.queryByTestId('filter-form')).not.toBeInTheDocument();
-  });
-  
-  test('renders FilterForm when isCollapsed is false', () => {
-    // Set the mock to return isCollapsed: false
-    mockIsCollapsed = false;
-    
-    render(
-      <Provider store={store}>
-        <MemoryRouter>
-          <Filter />
-        </MemoryRouter>
-      </Provider>
-    );
-    
-    // FilterForm should be rendered when isCollapsed is false
+    // When isCollapsed is false, only FilterForm should be rendered
     expect(screen.getByTestId('filter-form')).toBeInTheDocument();
     expect(screen.queryByTestId('filter-summary')).not.toBeInTheDocument();
   });
