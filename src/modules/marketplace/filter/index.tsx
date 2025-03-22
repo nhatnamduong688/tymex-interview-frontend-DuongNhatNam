@@ -54,10 +54,14 @@ export const Filter: React.FC = () => {
   const debouncedSearch = useMemo(
     () => debounce((value: string) => {
       dispatch(applySearchFilter(value));
-      // Cập nhật URL params
-      setParams({ search: value, keyword: value }, { replace: true });
+      // Cập nhật URL params - use replace: true to avoid creating new history entries
+      if (value) {
+        setParams({ search: value, keyword: value }, { replace: true });
+      } else {
+        removeParams(["search", "keyword"]);
+      }
     }, 500),
-    [dispatch, setParams]
+    [dispatch, setParams, removeParams]
   );
   
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,9 +83,9 @@ export const Filter: React.FC = () => {
     // Áp dụng filter
     dispatch(applyFilter());
     
-    // Cập nhật URL params
-    setParams(values, { replace: false });
-  }, [dispatch, setParams]);
+    // Không cần gọi setParams ở đây vì saga sẽ cập nhật URL
+    // Việc gọi đồng thời cả hai có thể gây conflict
+  }, [dispatch]);
   
   // Reset filter
   const handleResetFilter = useCallback(() => {

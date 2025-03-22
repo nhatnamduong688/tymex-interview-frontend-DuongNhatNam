@@ -8,6 +8,7 @@ import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
 import { setFiltersFromUrl } from '../../store/slices/filterSlice';
 import { useQueryParams } from '../../hooks/useQueryParams';
+import { useLocation } from 'react-router-dom';
 
 interface StyledMarketplacePageProps {
   isCollapsed?: boolean;
@@ -27,9 +28,9 @@ export const MarketplacePage = () => {
   const { isCollapsed } = useBreakpoint();
   const dispatch = useDispatch();
   const { getParams } = useQueryParams();
-  console.log('getParams', getParams)
+  const location = useLocation();
   
-  // Read URL parameters and initialize filter state
+  // Read URL parameters and initialize filter state - but only once on initial render or when URL search params change
   useEffect(() => {
     console.log('MarketplacePage useEffect running - Reading URL params');
     
@@ -53,7 +54,7 @@ export const MarketplacePage = () => {
     } else {
       console.log('No URL parameters found');
     }
-  }, [dispatch, getParams]);
+  }, [location.search, dispatch, getParams]);
 
   return (
     <Container>

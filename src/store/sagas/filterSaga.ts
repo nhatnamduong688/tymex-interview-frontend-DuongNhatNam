@@ -99,10 +99,8 @@ function updateUrlParams(filters: any) {
           url.searchParams.set('maxPrice', String(value[1]));
           console.log('Added price range to URL:', value[0], value[1]);
         } else if (key === 'categories' && value.length > 0) {
-          // Đối với categories, thêm từng giá trị riêng biệt
-          value.forEach((item: string) => {
-            url.searchParams.append(key, item);
-          });
+          // Đối với categories, sử dụng dấu phẩy để ngăn cách trong URL thay vì append nhiều lần
+          url.searchParams.set(key, value.join(','));
           console.log('Added categories to URL:', value);
         } else if (value.length > 0) {
           // Đối với các array khác, nối bằng dấu phẩy
@@ -126,8 +124,8 @@ function updateUrlParams(filters: any) {
     }
   });
   
-  // Update URL without refresh
-  window.history.pushState({}, '', url.toString());
+  // Use replaceState instead of pushState to avoid creating new history entries
+  window.history.replaceState({}, '', url.toString());
   console.log('URL updated:', url.toString());
 }
 
@@ -153,20 +151,16 @@ function* handleSearchChangeSaga(action: PayloadAction<string>): Generator<any, 
 // Worker saga to apply filter and update URL
 function* applyFilterSaga(): Generator<any, void, any> {
   try {
-    // Add a small delay to ensure filter is applied properly
-    yield delay(300);
-    
     // Get current filter state
     const filterState = yield select((state: RootState) => state.filter);
     
     // Log the filter being applied
     console.log('Applying filter:', filterState.appliedFilters);
     
-    // Update URL params
+    // Update URL params - only use the applied filters
     updateUrlParams(filterState.appliedFilters);
     
-    // Không dispatch fetchProducts trực tiếp
-    // Để component tự gọi API khi appliedFilters thay đổi
+    // No need for delay here as it might cause race conditions
     
   } catch (error) {
     console.error('Error applying filter:', error);
