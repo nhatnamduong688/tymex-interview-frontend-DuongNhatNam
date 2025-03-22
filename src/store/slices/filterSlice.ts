@@ -263,6 +263,33 @@ const filterSlice = createSlice({
       console.log('Updated filter state - appliedFilters:', state.appliedFilters);
       console.log('============= END FILTER SLICE =============');
     },
+    
+    // Update category filter
+    updateCategory: (state, action: PayloadAction<string>) => {
+      const value = action.payload;
+      
+      if (value === "") { // All categories
+        state.formValues.categories = [];
+        state.appliedFilters.categories = [];
+      } else {
+        const currentCategories = state.formValues.categories || [];
+        const newCategories = currentCategories.includes(value)
+          ? currentCategories.filter(item => item !== value)
+          : [...currentCategories, value];
+          
+        state.formValues.categories = newCategories;
+        state.appliedFilters.categories = newCategories;
+      }
+    },
+    
+    // Search by keyword
+    updateSearch: (state, action: PayloadAction<string>) => {
+      const value = action.payload;
+      state.formValues.search = value;
+      state.formValues.keyword = value;
+      state.appliedFilters.search = value;
+      state.appliedFilters.keyword = value;
+    },
   },
 });
 
@@ -275,6 +302,8 @@ export const {
   toggleFilterVisibility,
   setFilterVisibility,
   setFiltersFromUrl,
+  updateCategory,
+  updateSearch,
 } = filterSlice.actions;
 
 export default filterSlice.reducer; 

@@ -4,6 +4,7 @@ import { rootSaga } from './sagas';
 import filterReducer from './slices/filterSlice';
 import productsReducer from './slices/productsSlice';
 import authReducer from './reducers/authReducer';
+import { urlSyncMiddleware } from './middleware/urlSyncMiddleware';
 
 // Create saga middleware
 const sagaMiddleware = createSagaMiddleware();
@@ -16,7 +17,9 @@ export const store = configureStore({
     auth: authReducer
   },
   middleware: (getDefaultMiddleware) => 
-    getDefaultMiddleware({ thunk: true }).concat(sagaMiddleware),
+    getDefaultMiddleware({ thunk: true })
+      .concat(sagaMiddleware)
+      .concat(urlSyncMiddleware),
 });
 
 // Run the root saga

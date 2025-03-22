@@ -1,6 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { FilterForm } from './FilterForm';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Form } from 'antd';
+import { FilterForm } from '../FilterForm';
+import { SortType } from '../../../../enums/filter';
+import { TFilterProduct } from '../../../../types/product';
+import { api } from '../../../../services/api';
 import { vi, describe, test, expect } from 'vitest';
 
 // Mock the antd components
@@ -126,50 +130,164 @@ vi.mock('../../../enums/filter', () => ({
   }
 }));
 
-describe('FilterForm', () => {
-  const mockForm = {
-    resetFields: vi.fn(),
-    setFieldsValue: vi.fn(),
-    getFieldValue: vi.fn().mockImplementation((field) => {
-      if (field === 'priceRange') return [0, 200];
-      if (field === 'keyword') return 'test';
-      return null;
-    }),
-    submit: vi.fn()
+// Mock the api
+jest.mock('../../../../services/api', () => ({
+  api: {
+    getProducts: jest.fn(),
+  }
+}));
+
+describe('FilterForm Component', () => {
+  const mockSubmit = jest.fn();
+  const mockResetFilter = jest.fn();
+  const mockSearchChange = jest.fn();
+  
+  const testValues: TFilterProduct = {
+    keyword: 'test keyword',
+    priceRange: [10, 50],
+    tier: 'Premium',
+    theme: 'Dark',
+    sortTime: SortType.Ascending,
+    sortPrice: SortType.Descending,
   };
   
-  const defaultProps = {
-    form: mockForm,
-    loading: false,
-    onSubmit: vi.fn(),
-    onResetFilter: vi.fn(),
-    onSearchChange: vi.fn(),
-    currentValues: {}
+  // Mock data for tiers and themes
+  const mockProducts = {
+    data: [
+      { tier: 'Free', theme: 'Light' },
+      { tier: 'Premium', theme: 'Dark' },
+      { tier: 'Pro', theme: 'Colorful' },
+      { tier: 'Premium', theme: 'Minimal' },
+    ]
   };
-
+  
+  // Setup api mock implementation
   beforeEach(() => {
-    vi.clearAllMocks();
+    (api.getProducts as jest.Mock).mockResolvedValue(mockProducts);
+    jest.clearAllMocks();
   });
-
-  test('renders key form sections and buttons', () => {
-    render(<FilterForm {...defaultProps} />);
+  
+  const renderComponent = () => {
+    const [form] = Form.useForm();
+    return render(
+      <FilterForm
+        form={form}
+        loading={false}
+        onSubmit={mockSubmit}
+        onResetFilter={mockResetFilter}
+        onSearchChange={mockSearchChange}
+        currentValues={testValues}
+      />
+    );
+  };
+  
+  it('should render correctly with initial values', async () => {
+    renderComponent();
     
-    // Check for form label names
-    expect(screen.getByText('Search')).toBeInTheDocument();
-    expect(screen.getByText('Price Range')).toBeInTheDocument();
-    expect(screen.getByText('Tier')).toBeInTheDocument();
-    expect(screen.getByText('Theme')).toBeInTheDocument();
+    // Check if the API was called to fetch filter options
+    expect(api.getProducts).toHaveBeenCalled();
     
-    // Check for buttons
-    expect(screen.getByTestId('reset')).toBeInTheDocument();
-    expect(screen.getByTestId('apply-filters')).toBeInTheDocument();
+    // Check for loading states
+    expect(screen.getAllByText(/Loading/i)[0]).toBeInTheDocument();
+    
+    // Wait for API data to load
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument();
+    });
+    
+    // Check if the form renders with initial values
+    expect(screen.getByDisplayValue('test keyword')).toBeInTheDocument();
+    
+    // Check if options are rendered from API data
+    const tierSelect = screen.getByLabelText('Tier');
+    fireEvent.mouseDown(tierSelect);
+    
+    // Wait for dropdown options to appear
+    await waitFor(() => {
+      expect(screen.getByText('Free')).toBeInTheDocument();
+      expect(screen.getByText('Premium')).toBeInTheDocument();
+      expect(screen.getByText('Pro')).toBeInTheDocument();
+    });
+    
+    // Check theme select
+    const themeSelect = screen.getByLabelText('Theme');
+    fireEvent.mouseDown(themeSelect);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Light')).toBeInTheDocument();
+      expect(screen.getByText('Dark')).toBeInTheDocument();
+      expect(screen.getByText('Colorful')).toBeInTheDocument();
+      expect(screen.getByText('Minimal')).toBeInTheDocument();
+    });
   });
-
-  test('calls onResetFilter when reset button is clicked', () => {
-    render(<FilterForm {...defaultProps} />);
+  
+  it('should handle form submission', async () => {
+    renderComponent();
     
-    fireEvent.click(screen.getByTestId('reset'));
+    // Wait for API data to load
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument();
+    });
     
-    expect(defaultProps.onResetFilter).toHaveBeenCalledTimes(1);
+    // Submit the form
+    const applyButton = screen.getByText('Apply Filters');
+    fireEvent.click(applyButton);
+    
+    // Check if the submit function was called with the form values
+    expect(mockSubmit).toHaveBeenCalled();
+  });
+  
+  it('should handle form reset', async () => {
+    renderComponent();
+    
+    // Wait for API data to load
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument();
+    });
+    
+    // Reset the form
+    const resetButton = screen.getByText('Reset');
+    fireEvent.click(resetButton);
+    
+    expect(mockResetFilter).toHaveBeenCalled();
+  });
+  
+  it('should handle search change', async () => {
+    renderComponent();
+    
+    // Wait for API data to load
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument();
+    });
+    
+    // Change the search input
+    const searchInput = screen.getByPlaceholderText('Search products...');
+    fireEvent.change(searchInput, { target: { value: 'new search' } });
+    
+    expect(mockSearchChange).toHaveBeenCalled();
+  });
+  
+  it('should handle API errors gracefully', async () => {
+    // Mock API to throw an error
+    (api.getProducts as jest.Mock).mockRejectedValue(new Error('API error'));
+    
+    renderComponent();
+    
+    // Check if loading state is shown
+    expect(screen.getAllByText(/Loading/i)[0]).toBeInTheDocument();
+    
+    // Wait for error to be handled
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading/i)).not.toBeInTheDocument();
+    });
+    
+    // Verify empty options lists are still rendered
+    const tierSelect = screen.getByLabelText('Tier');
+    fireEvent.mouseDown(tierSelect);
+    
+    // Should show empty state
+    await waitFor(() => {
+      expect(screen.getByText('Select tier')).toBeInTheDocument();
+    });
   });
 }); 

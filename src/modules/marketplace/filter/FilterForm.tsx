@@ -1,9 +1,10 @@
-import React from 'react';
-import { Form, Input, Button, Select, Slider, Divider, Row, Col } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Form, Input, Button, Select, Slider, Divider, Row, Col, Spin } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
-import { SortType, ProductTheme, ProductTier } from '../../../enums/filter';
+import { SortType } from '../../../enums/filter';
 import { TFilterProduct } from '../../../types/product';
+import { api } from '../../../services/api';
 
 const { Option } = Select;
 
@@ -17,6 +18,13 @@ const FormFooter = styled.div`
   justify-content: space-between;
   margin-top: 24px;
   gap: 12px;
+`;
+
+const LoadingSelect = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
 `;
 
 const sortTimeOptions = [
@@ -46,13 +54,47 @@ export const FilterForm: React.FC<FilterFormProps> = ({
   onSearchChange,
   currentValues
 }) => {
-  // Generate option components for tiers from enum values
-  const tierOptions = Object.values(ProductTier).map(tier => (
+  const [tiers, setTiers] = useState<string[]>([]);
+  const [themes, setThemes] = useState<string[]>([]);
+  const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+
+  // Fetch tiers and themes from API
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      setIsLoadingFilters(true);
+      try {
+        // Fetch products to extract unique tiers and themes
+        const response = await api.getProducts();
+        
+        // Extract unique tiers
+        const uniqueTiers = Array.from(new Set(
+          response.data.map((product: any) => product.tier).filter(Boolean)
+        ));
+        
+        // Extract unique themes
+        const uniqueThemes = Array.from(new Set(
+          response.data.map((product: any) => product.theme).filter(Boolean)
+        ));
+        
+        setTiers(uniqueTiers);
+        setThemes(uniqueThemes);
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      } finally {
+        setIsLoadingFilters(false);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
+
+  // Generate tier options from API data
+  const tierOptions = tiers.map(tier => (
     <Option key={tier} value={tier}>{tier}</Option>
   ));
 
-  // Generate theme options from enum values
-  const themeOptions = Object.values(ProductTheme).map(theme => (
+  // Generate theme options from API data
+  const themeOptions = themes.map(theme => (
     <Option key={theme} value={theme}>{theme}</Option>
   ));
 
@@ -107,15 +149,27 @@ export const FilterForm: React.FC<FilterFormProps> = ({
       </Form.Item>
 
       <Form.Item name="tier" label="Tier">
-        <Select placeholder="Select tier" allowClear>
-          {tierOptions}
-        </Select>
+        {isLoadingFilters ? (
+          <LoadingSelect>
+            <Spin size="small" /> <span style={{ marginLeft: 8 }}>Loading tiers...</span>
+          </LoadingSelect>
+        ) : (
+          <Select placeholder="Select tier" allowClear>
+            {tierOptions}
+          </Select>
+        )}
       </Form.Item>
 
       <Form.Item name="theme" label="Theme">
-        <Select placeholder="Select theme" allowClear>
-          {themeOptions}
-        </Select>
+        {isLoadingFilters ? (
+          <LoadingSelect>
+            <Spin size="small" /> <span style={{ marginLeft: 8 }}>Loading themes...</span>
+          </LoadingSelect>
+        ) : (
+          <Select placeholder="Select theme" allowClear>
+            {themeOptions}
+          </Select>
+        )}
       </Form.Item>
 
       <Divider />

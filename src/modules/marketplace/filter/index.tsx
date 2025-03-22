@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
-import { ConfigProvider, Form } from "antd";
+import { ConfigProvider, Form, Button, Input, Select, Space, InputNumber, Slider } from "antd";
 import themeFilter from "../../../theme/themeFilterConfig";
 import { StyledForm } from './filter.styled';
 import { FilterForm } from './FilterForm';
@@ -7,105 +7,171 @@ import { FilterSummary } from './FilterSummary';
 import { useBreakpoint } from "../../../hooks/useBreakpoint";
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
-import { updateFormValues, applyFilter, resetFilter, applySearchFilter, toggleFilterVisibility } from '../../../store/slices/filterSlice';
-import { useQueryParams } from '../../../hooks/useQueryParams';
+import { updateFormValues, applyFilter, resetFilter, updateSearch, toggleFilterVisibility } from '../../../store/slices/filterSlice';
 import debounce from 'lodash.debounce';
 import { formatPrice } from '../../../helpers/common';
+import { useForm, Controller } from 'react-hook-form';
+import { SearchOutlined, CloseOutlined } from '@ant-design/icons';
+import styled from 'styled-components';
+
+const { Option } = Select;
+
+const FilterContainer = styled.div`
+  min-width: 220px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  margin-right: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const FilterTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+`;
+
+const FilterGroup = styled.div`
+  margin-bottom: 24px;
+`;
+
+const FilterLabel = styled.div`
+  font-weight: 500;
+  margin-bottom: 8px;
+`;
+
+const PriceInputsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+`;
+
+const PriceInput = styled(InputNumber)`
+  width: 100%;
+`;
+
+const PriceDivider = styled.span`
+  margin: 0 8px;
+`;
+
+const FilterButtonGroup = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+`;
+
+const SearchContainer = styled.div`
+  margin-bottom: 24px;
+`;
+
+type FilterFormValues = {
+  search: string;
+  tier: string;
+  theme: string;
+  priceRange: [number, number];
+  minPrice: number | null;
+  maxPrice: number | null;
+};
 
 export const Filter: React.FC = () => {
   const dispatch = useDispatch();
-  const { formValues, appliedFilters, isFilterVisible } = useSelector((state: RootState) => state.filter);
+  const { formValues, appliedFilters, isFilterVisible, tiers, themes } = useSelector((state: RootState) => state.filter);
   const { loading } = useSelector((state: RootState) => state.products);
   const [form] = Form.useForm();
-  const { getParams, setParams, removeParams } = useQueryParams();
   const { isCollapsed } = useBreakpoint();
+  
+  const { control, handleSubmit, setValue, reset, watch } = useForm<FilterFormValues>({
+    defaultValues: {
+      search: '',
+      tier: 'all',
+      theme: 'all',
+      priceRange: [0, 100],
+      minPrice: null,
+      maxPrice: null
+    }
+  });
   
   // Debug values
   console.log('Filter component - formValues:', formValues);
   console.log('Filter component - appliedFilters:', appliedFilters);
   
-  // Khởi tạo form từ URL params
+  // Initialize form values from Redux state
   useEffect(() => {
-    const urlParams = getParams();
-    console.log('Filter component - URL params:', urlParams);
-    
-    if (Object.keys(urlParams).length > 0) {
-      // Đảm bảo minPrice và maxPrice được chuyển đúng thành priceRange
-      const formData: any = { ...urlParams };
-      
-      // Nếu có minPrice/maxPrice, tạo priceRange cho form
-      if (urlParams.minPrice || urlParams.maxPrice) {
-        const minPrice = parseFloat(urlParams.minPrice as string) || 0;
-        const maxPrice = parseFloat(urlParams.maxPrice as string) || 200;
-        formData.priceRange = [minPrice, maxPrice];
-      }
-      
-      // Đảm bảo search được chuyển thành keyword cho form
-      if (urlParams.search) {
-        formData.keyword = urlParams.search;
-      }
-      
-      console.log('Setting form fields:', formData);
-      form.setFieldsValue(formData);
+    if (formValues) {
+      setValue('search', formValues.search || '');
+      setValue('tier', formValues.tier || 'all');
+      setValue('theme', formValues.theme || 'all');
+      setValue('priceRange', formValues.priceRange || [0, 100]);
+      setValue('minPrice', formValues.minPrice || null);
+      setValue('maxPrice', formValues.maxPrice || null);
     }
-  }, [getParams, form]);
+  }, [formValues, setValue]);
   
-  // Xử lý tìm kiếm với debounce
-  const debouncedSearch = useMemo(
-    () => debounce((value: string) => {
-      dispatch(applySearchFilter(value));
-      // Cập nhật URL params - use replace: true to avoid creating new history entries
-      if (value) {
-        setParams({ search: value, keyword: value }, { replace: true });
-      } else {
-        removeParams(["search", "keyword"]);
-      }
-    }, 500),
-    [dispatch, setParams, removeParams]
-  );
+  // Watch form values for search input
+  const searchValue = watch('search');
   
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  }, [debouncedSearch]);
+  // Debounced search handler
+  const debouncedSearch = debounce((value: string) => {
+    dispatch(updateSearch(value));
+  }, 500);
   
-  // Xử lý submit form
-  const onSubmit = useCallback((values: any) => {
-    console.log('Form submitted with values:', values);
-    
-    // Nếu có priceRange, thêm minPrice/maxPrice
-    if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
-      values.minPrice = values.priceRange[0];
-      values.maxPrice = values.priceRange[1];
+  // Handle search input changes
+  useEffect(() => {
+    if (searchValue !== undefined) {
+      debouncedSearch(searchValue);
     }
     
-    // Cập nhật form values trong Redux
-    dispatch(updateFormValues(values));
-    // Áp dụng filter
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [searchValue, debouncedSearch]);
+  
+  // Handle price range change from slider
+  const handlePriceRangeChange = (value: [number, number]) => {
+    setValue('priceRange', value);
+    setValue('minPrice', value[0]);
+    setValue('maxPrice', value[1]);
+  };
+  
+  // Handle min/max price input change
+  const handleMinPriceChange = (value: number | null) => {
+    if (value !== null) {
+      const currentRange = watch('priceRange');
+      setValue('priceRange', [value, currentRange[1]]);
+      setValue('minPrice', value);
+    }
+  };
+  
+  const handleMaxPriceChange = (value: number | null) => {
+    if (value !== null) {
+      const currentRange = watch('priceRange');
+      setValue('priceRange', [currentRange[0], value]);
+      setValue('maxPrice', value);
+    }
+  };
+  
+  // Handle form submission
+  const onSubmit = (data: FilterFormValues) => {
+    // Update form values in Redux
+    dispatch(updateFormValues(data));
+    
+    // Apply filters
     dispatch(applyFilter());
-    
-    // Không cần gọi setParams ở đây vì saga sẽ cập nhật URL
-    // Việc gọi đồng thời cả hai có thể gây conflict
-  }, [dispatch]);
+  };
   
-  // Reset filter
-  const handleResetFilter = useCallback(() => {
-    form.resetFields();
-    dispatch(resetFilter());
+  // Handle filter reset
+  const handleResetFilter = () => {
+    reset({
+      search: '',
+      tier: 'all',
+      theme: 'all',
+      priceRange: [0, 100],
+      minPrice: null,
+      maxPrice: null
+    });
     
-    // Xóa params khỏi URL
-    removeParams([
-      "keyword",
-      "search",
-      "priceRange",
-      "tier",
-      "theme",
-      "sortTime",
-      "sortPrice",
-      "categories",
-      "minPrice",
-      "maxPrice"
-    ]);
-  }, [form, dispatch, removeParams]);
+    dispatch(resetFilter());
+  };
   
   // Chuyển đổi hiển thị filter
   const handleToggleFilter = useCallback(() => {
@@ -152,16 +218,135 @@ export const Filter: React.FC = () => {
           isFilterVisible={isFilterVisible}
         />
       ) : (
-        <StyledForm>
-          <FilterForm
-            form={form}
-            loading={loading}
-            onSubmit={onSubmit}
-            onResetFilter={handleResetFilter}
-            onSearchChange={handleSearchChange}
-            currentValues={formValues as any}
-          />
-        </StyledForm>
+        <FilterContainer>
+          <FilterTitle>Filter</FilterTitle>
+          
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <SearchContainer>
+              <Controller
+                name="search"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    placeholder="Search products..."
+                    prefix={<SearchOutlined />}
+                    suffix={
+                      field.value ? (
+                        <CloseOutlined
+                          onClick={() => {
+                            setValue('search', '');
+                            dispatch(updateSearch(''));
+                          }}
+                        />
+                      ) : null
+                    }
+                  />
+                )}
+              />
+            </SearchContainer>
+            
+            <FilterGroup>
+              <FilterLabel>Tier</FilterLabel>
+              <Controller
+                name="tier"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    style={{ width: '100%' }}
+                    placeholder="Select tier"
+                  >
+                    <Option value="all">All</Option>
+                    {tiers.map((tier) => (
+                      <Option key={tier} value={tier}>
+                        {tier}
+                      </Option>
+                    ))}
+                  </Select>
+                )}
+              />
+            </FilterGroup>
+            
+            <FilterGroup>
+              <FilterLabel>Theme</FilterLabel>
+              <Controller
+                name="theme"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    style={{ width: '100%' }}
+                    placeholder="Select theme"
+                  >
+                    <Option value="all">All</Option>
+                    {themes.map((theme) => (
+                      <Option key={theme} value={theme}>
+                        {theme}
+                      </Option>
+                    ))}
+                  </Select>
+                )}
+              />
+            </FilterGroup>
+            
+            <FilterGroup>
+              <FilterLabel>Price Range</FilterLabel>
+              <Controller
+                name="priceRange"
+                control={control}
+                render={({ field }) => (
+                  <Slider
+                    range
+                    value={field.value}
+                    onChange={handlePriceRangeChange}
+                    min={0}
+                    max={100}
+                  />
+                )}
+              />
+              
+              <PriceInputsContainer>
+                <Controller
+                  name="minPrice"
+                  control={control}
+                  render={({ field }) => (
+                    <PriceInput
+                      min={0}
+                      max={100}
+                      value={field.value}
+                      onChange={handleMinPriceChange}
+                      placeholder="Min"
+                    />
+                  )}
+                />
+                
+                <PriceDivider>-</PriceDivider>
+                
+                <Controller
+                  name="maxPrice"
+                  control={control}
+                  render={({ field }) => (
+                    <PriceInput
+                      min={0}
+                      max={100}
+                      value={field.value}
+                      onChange={handleMaxPriceChange}
+                      placeholder="Max"
+                    />
+                  )}
+                />
+              </PriceInputsContainer>
+            </FilterGroup>
+            
+            <FilterButtonGroup>
+              <Button onClick={handleResetFilter}>Reset</Button>
+              <Button type="primary" htmlType="submit">
+                Apply
+              </Button>
+            </FilterButtonGroup>
+          </form>
+        </FilterContainer>
       )}
     </ConfigProvider>
   );

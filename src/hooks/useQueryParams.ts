@@ -1,14 +1,32 @@
 import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { 
+  setFiltersFromUrl, 
+  updateCategory,
+  updateSearch,
+  applyFilter
+} from '../store/slices/filterSlice';
 
-interface SetParamsOptions {
-  replace?: boolean;
-}
-
+/**
+ * @deprecated This hook is deprecated in favor of Redux-first URL handling.
+ * Please use Redux actions directly: updateCategory, updateSearch, applyFilter, etc.
+ * URL parameters are automatically handled by the urlSyncMiddleware.
+ */
 export const useQueryParams = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
 
+  console.warn(
+    'useQueryParams is deprecated. Consider using Redux actions directly for better performance.'
+  );
+
+  /**
+   * Read URL parameters and return them as an object
+   * @param keys Optional array of specific keys to extract
+   * @returns Object containing URL parameters
+   */
   const getParams = useCallback((keys?: string[]) => {
     const searchParams = new URLSearchParams(location.search);
     const params: Record<string, string | string[]> = {};
@@ -41,60 +59,66 @@ export const useQueryParams = () => {
     return params;
   }, [location.search]);
 
+  /**
+   * @deprecated Use Redux actions instead
+   * This method is kept for backward compatibility only
+   */
   const setParams = useCallback(
-    (newParams: Record<string, string | string[]>, options: SetParamsOptions = {}) => {
-      const searchParams = new URLSearchParams(location.search);
-
-      // Update or add new parameters
-      Object.entries(newParams).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          if (value.length > 0) {
-            searchParams.set(key, value.join(','));
-          } else {
-            searchParams.delete(key);
-          }
-        } else if (value !== undefined && value !== null && value !== '') {
-          searchParams.set(key, value);
-        } else {
-          searchParams.delete(key);
+    (newParams: Record<string, string | string[]>, options: { replace?: boolean } = {}) => {
+      // Check common filter parameters and dispatch Redux actions
+      if (newParams.search && typeof newParams.search === 'string') {
+        // Search filter
+        dispatch(updateSearch(newParams.search));
+        return;
+      }
+      
+      if (newParams.categories) {
+        // If it's a category change, dispatch that specific action
+        if (Array.isArray(newParams.categories) && newParams.categories.length === 1) {
+          dispatch(updateCategory(newParams.categories[0]));
+          return;
         }
-      });
-
-      // Build the new URL
-      const newSearch = searchParams.toString();
-      const query = newSearch ? `?${newSearch}` : '';
-
-      // Navigate to the new URL
-      navigate({
-        pathname: location.pathname,
-        search: query,
-      }, {
-        replace: options.replace
-      });
+      }
+      
+      // For other changes, get current params, merge with new ones and apply filter
+      const currentParams = getParams();
+      dispatch(setFiltersFromUrl({
+        ...currentParams,
+        ...newParams
+      }));
+      dispatch(applyFilter());
     },
-    [location, navigate]
+    [dispatch, location, navigate, getParams]
   );
 
+  /**
+   * @deprecated Use Redux reset action instead
+   * This method is kept for backward compatibility only
+   */
   const removeParams = useCallback(
     (keys: string[]) => {
-      const searchParams = new URLSearchParams(location.search);
+      // Most common scenario - updating categories
+      if (keys.includes('categories')) {
+        dispatch(updateCategory(''));
+        return;
+      }
       
-      // Remove specified parameters
+      // For search/keyword
+      if (keys.includes('search') || keys.includes('keyword')) {
+        dispatch(updateSearch(''));
+        return;
+      }
+      
+      // For other parameters, we'll have to extract current params and remove specified ones
+      const currentParams = getParams();
       keys.forEach(key => {
-        searchParams.delete(key);
+        delete currentParams[key];
       });
-
-      // Build the new URL
-      const newSearch = searchParams.toString();
-      const query = newSearch ? `?${newSearch}` : '';
-
-      // Navigate to the new URL
-      navigate({
-        pathname: location.pathname,
-        search: query,
-      });
+      
+      dispatch(setFiltersFromUrl(currentParams));
+      dispatch(applyFilter());
     },
-    [location, navigate]
+    [dispatch, getParams, location, navigate]
   );
 
   return {

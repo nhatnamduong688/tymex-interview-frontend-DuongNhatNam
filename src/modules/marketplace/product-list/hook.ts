@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
-import { getListProduct } from '../../../server/product';
+import { useEffect } from 'react';
 import { TProduct } from '../../../types/product';
-import { useProductsContext } from '../../../contexts/productsContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../../store';
+import { fetchProducts, fetchMoreProducts } from '../../../store/slices/productsSlice';
 
+/**
+ * @deprecated This hook is deprecated in favor of direct Redux usage.
+ * Please use Redux actions and selectors directly instead.
+ */
 interface UseProductReturn {
   dataProduct: TProduct[];
   hasMore: boolean;
@@ -13,69 +18,37 @@ interface UseProductReturn {
   error: Error | null;
 }
 
+/**
+ * @deprecated This hook is deprecated in favor of direct Redux usage.
+ * Please use useSelector and useDispatch with products slice instead.
+ */
 export const useProduct = (): UseProductReturn => {
-  const [dataProduct, setDataProduct] = useState<TProduct[]>([]);
-  const [hasMore, setHasMore] = useState<boolean>(false);
-  const [nextOffset, setNextOffset] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isFetchingNextPage, setIsFetchingNextPage] = useState<boolean>(false);
-  const [isError, setIsError] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const { filter } = useProductsContext();
+  console.warn(
+    'useProduct hook is deprecated. Please use Redux directly with useSelector and useDispatch.'
+  );
   
-  const LIMIT = 8;
-
+  const dispatch = useDispatch();
+  
+  // Get data from Redux
+  const { 
+    data: dataProduct, 
+    loading: isLoading, 
+    error, 
+    hasMore,
+    isFetchingNextPage
+  } = useSelector((state: RootState) => state.products);
+  
+  const appliedFilters = useSelector((state: RootState) => state.filter.appliedFilters);
+  
   // Fetch initial data
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setIsError(false);
-      setError(null);
-      
-      try {
-        const response = await getListProduct({
-          offset: 0,
-          limit: LIMIT,
-          filter
-        });
-        
-        setDataProduct(response.data as TProduct[]);
-        setHasMore(response.hasMore);
-        setNextOffset(response.nextOffset);
-      } catch (err) {
-        setIsError(true);
-        setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [filter]);
+    dispatch(fetchProducts(appliedFilters));
+  }, [dispatch, JSON.stringify(appliedFilters)]);
 
   // Function to fetch next page
-  const fetchNextPage = async () => {
+  const fetchNextPage = () => {
     if (!hasMore || isLoading || isFetchingNextPage) return;
-    
-    setIsFetchingNextPage(true);
-    
-    try {
-      const response = await getListProduct({
-        offset: nextOffset,
-        limit: LIMIT,
-        filter
-      });
-      
-      setDataProduct(prev => [...prev, ...(response.data as TProduct[])]);
-      setHasMore(response.hasMore);
-      setNextOffset(response.nextOffset);
-    } catch (err) {
-      setIsError(true);
-      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-    } finally {
-      setIsFetchingNextPage(false);
-    }
+    dispatch(fetchMoreProducts());
   };
 
   return {
@@ -84,7 +57,7 @@ export const useProduct = (): UseProductReturn => {
     fetchNextPage,
     isLoading,
     isFetchingNextPage,
-    isError,
-    error
+    isError: !!error,
+    error: error ? new Error(error) : null
   };
 }; 

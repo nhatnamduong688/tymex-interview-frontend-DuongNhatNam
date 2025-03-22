@@ -1,52 +1,36 @@
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { TFilterProduct } from "../../../types/product";
-import { useQueryParams } from "../../../hooks/useQueryParams";
-import { useProductsContext } from '../../../contexts/productsContext';
-import useProducts from '../../../hooks/useProducts';
-import debounce from 'lodash.debounce';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../../store';
+import { 
+  updateFormValues, 
+  applyFilter, 
+  resetFilter, 
+  updateSearch 
+} from '../../../store/slices/filterSlice';
 import { useBreakpoint } from "../../../hooks/useBreakpoint";
 import { SortType } from "../../../enums/filter";
 import { formatPrice } from "../../../helpers/common";
+import debounce from 'lodash.debounce';
 
+/**
+ * @deprecated This hook is deprecated in favor of direct Redux usage in components.
+ * Please use Redux actions directly for better performance.
+ */
 export const useFilterLogic = () => {
+  console.warn(
+    'useFilterLogic is deprecated. Consider using Redux actions and selectors directly.'
+  );
+  
   const [form, setForm] = useState<any>(null);
-  const [updateFilter, setUpdateFilter] = useState(false);
-  const [currentValues, setCurrentValues] = useState<TFilterProduct>({});
   
-  // Use a ref to avoid infinite loop with params
-  const paramsRef = useRef<any>({});
-
-  const { getParams, setParams, removeParams } = useQueryParams();
+  const dispatch = useDispatch();
   const { isCollapsed } = useBreakpoint();
-  const { filter, setFilter } = useProductsContext();
   
-  const {
-    applyFilter,
-    refreshData,
-    loading,
-    filters: currentFilters,
-  } = useProducts();
-
-  // Only get params once at initialization and when explicitly needed
-  const fetchParams = useCallback(() => {
-    const urlParams = getParams([
-      "keyword",
-      "priceRange",
-      "tier",
-      "theme",
-      "sortTime",
-      "sortPrice",
-      "categories",
-    ]);
-    paramsRef.current = urlParams;
-    return urlParams;
-  }, [getParams]);
-
-  // Initial params load
-  useEffect(() => {
-    fetchParams();
-  }, [fetchParams]);
-
+  // Get values from Redux store
+  const { formValues, appliedFilters } = useSelector((state: RootState) => state.filter);
+  const { loading } = useSelector((state: RootState) => state.products);
+  
   // Set the form reference
   const setFormRef = useCallback((formInstance: any) => {
     setForm(formInstance);
@@ -56,45 +40,49 @@ export const useFilterLogic = () => {
   const getFilterSummary = useCallback(() => {
     const summary = [];
     
-    if (currentValues.keyword) {
-      summary.push(`Search: "${currentValues.keyword}"`);
+    if (appliedFilters.search) {
+      summary.push(`Search: "${appliedFilters.search}"`);
     }
     
-    if (currentValues.priceRange?.length === 2) {
-      summary.push(`Price Range: ${formatPrice(currentValues.priceRange[0])} - ${formatPrice(currentValues.priceRange[1])}`);
+    if (appliedFilters.priceRange?.length === 2) {
+      summary.push(`Price Range: ${formatPrice(appliedFilters.priceRange[0])} - ${formatPrice(appliedFilters.priceRange[1])}`);
+    } else if (appliedFilters.minPrice || appliedFilters.maxPrice) {
+      const minPrice = parseFloat(appliedFilters.minPrice as string) || 0;
+      const maxPrice = parseFloat(appliedFilters.maxPrice as string) || 200;
+      summary.push(`Price Range: ${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`);
     }
     
-    if (currentValues.tier) {
-      summary.push(`Tier: ${currentValues.tier}`);
+    if (appliedFilters.tier) {
+      summary.push(`Tier: ${appliedFilters.tier}`);
     }
     
-    if (currentValues.theme) {
-      summary.push(`Theme: ${currentValues.theme}`);
+    if (appliedFilters.theme) {
+      summary.push(`Theme: ${appliedFilters.theme}`);
     }
     
-    if (currentValues.sortTime) {
-      summary.push(`Sort by Time: ${currentValues.sortTime === SortType.Ascending ? 'Earliest' : 'Latest'}`);
+    if (appliedFilters.sortTime) {
+      summary.push(`Sort by Time: ${appliedFilters.sortTime === SortType.Ascending ? 'Earliest' : 'Latest'}`);
     }
     
-    if (currentValues.sortPrice) {
-      summary.push(`Sort by Price: ${currentValues.sortPrice === SortType.Ascending ? 'Low to High' : 'High to Low'}`);
+    if (appliedFilters.sortPrice) {
+      summary.push(`Sort by Price: ${appliedFilters.sortPrice === SortType.Ascending ? 'Low to High' : 'High to Low'}`);
     }
     
-    if (currentValues.categories?.length) {
-      summary.push(`Categories: ${currentValues.categories.join(', ')}`);
+    if (appliedFilters.categories?.length) {
+      summary.push(`Categories: ${Array.isArray(appliedFilters.categories) 
+        ? appliedFilters.categories.join(', ') 
+        : appliedFilters.categories}`);
     }
     
     return summary;
-  }, [currentValues]);
+  }, [appliedFilters]);
 
   // Use debounced search
   const debouncedSearch = useCallback(
     debounce((term: string) => {
-      const paramValues = { search: term, keyword: term };
-      applyFilter(paramValues);
-      setCurrentValues(prev => ({ ...prev, keyword: term }));
+      dispatch(updateSearch(term));
     }, 500),
-    [applyFilter]
+    [dispatch]
   );
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,113 +90,65 @@ export const useFilterLogic = () => {
     debouncedSearch(value);
   }, [debouncedSearch]);
 
-  const onSubmit = useCallback((value: TFilterProduct) => {
-    setUpdateFilter(true);
-    setFilter({
-      ...value,
-    });
-    
-    // Save current form values for display
-    setCurrentValues(value);
-    
-    // Convert values to api parameters
-    const paramValues: Record<string, string | string[]> = {};
-    
-    // Map fields explicitly for clarity
-    if (value.keyword) {
-      paramValues.search = value.keyword;
-      paramValues.keyword = value.keyword;
+  const onSubmit = useCallback((values: TFilterProduct) => {
+    // Đảm bảo cả search và keyword đều được gửi đi
+    if (values.keyword) {
+      values.search = values.keyword;
     }
     
-    if (value.priceRange) {
-      paramValues.priceRange = value.priceRange.map(String);
+    // Convert priceRange to minPrice/maxPrice if needed
+    if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
+      values.minPrice = values.priceRange[0];
+      values.maxPrice = values.priceRange[1];
     }
     
-    if (value.tier) {
-      paramValues.tier = value.tier;
-    }
+    // Update form values in Redux
+    dispatch(updateFormValues(values));
     
-    if (value.theme) {
-      paramValues.theme = value.theme;
-    }
-    
-    if (value.sortTime) {
-      paramValues.sortTime = value.sortTime;
-    }
-    
-    if (value.sortPrice) {
-      paramValues.sortPrice = value.sortPrice;
-    }
-    
-    if (isCollapsed && value.categories) {
-      paramValues.categories = value.categories;
-    }
-    
-    // Get the latest params
-    const currentParams = fetchParams();
-    
-    // Update URL params
-    setParams(
-      {
-        ...currentParams,
-        ...paramValues
-      },
-      { replace: false }
-    );
+    // Apply filter
+    dispatch(applyFilter());
+  }, [dispatch]);
 
-    // Apply filters to products
-    applyFilter(paramValues);
-  }, [setFilter, setParams, fetchParams, isCollapsed, applyFilter]);
-
-  const resetFilter = useCallback(() => {
+  const resetFilterHandler = useCallback(() => {
     if (form) {
       form.resetFields();
     }
-    setFilter({ categories: [] });
-    setCurrentValues({});
     
-    removeParams([
-      "keyword",
-      "priceRange",
-      "tier",
-      "theme",
-      "sortTime",
-      "sortPrice",
-      ...(isCollapsed ? ["categories"] : []).flat(),
-    ]);
+    // Reset Redux filter state
+    dispatch(resetFilter());
+  }, [form, dispatch]);
 
-    // Reset filters in the products hook
-    applyFilter({ search: "", keyword: "" });
-
-    // Refresh products with empty filters
-    refreshData();
-  }, [form, setFilter, removeParams, isCollapsed, applyFilter, refreshData]);
-
-  // Sync URL params with form - with proper dependency tracking
+  // Sync Redux state with form
   useEffect(() => {
-    if (updateFilter || !form) return;
+    if (!form) return;
     
-    const currentParams = fetchParams();
-    form.setFieldsValue(currentParams);
-    setCurrentValues(currentParams);
+    const formData: any = { ...formValues };
     
-    // Reset update flag after a form update cycle
-    return () => {
-      setUpdateFilter(false);
-    };
-  }, [fetchParams, form, updateFilter]);
+    // Nếu có minPrice/maxPrice, tạo priceRange cho form
+    if (formValues.minPrice || formValues.maxPrice) {
+      const minPrice = parseFloat(formValues.minPrice as string) || 0;
+      const maxPrice = parseFloat(formValues.maxPrice as string) || 200;
+      formData.priceRange = [minPrice, maxPrice];
+    }
+    
+    // Đảm bảo search được chuyển thành keyword cho form
+    if (formValues.search) {
+      formData.keyword = formValues.search;
+    }
+    
+    form.setFieldsValue(formData);
+  }, [formValues, form]);
 
   return {
     // State
-    currentValues,
+    currentValues: formValues,
     loading,
-    params: paramsRef.current,
     isCollapsed,
     
     // Handlers
     handleSearchChange,
     onSubmit,
-    resetFilter,
+    resetFilter: resetFilterHandler,
     setFormRef,
     
     // Computed values

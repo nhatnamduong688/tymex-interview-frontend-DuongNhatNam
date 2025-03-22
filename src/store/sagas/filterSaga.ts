@@ -157,11 +157,9 @@ function* applyFilterSaga(): Generator<any, void, any> {
     // Log the filter being applied
     console.log('Applying filter:', filterState.appliedFilters);
     
-    // Update URL params - only use the applied filters
+    // Note: URL params are now managed by urlSyncMiddleware
+    // We just update URL based on the filter state here without worrying about reading URL
     updateUrlParams(filterState.appliedFilters);
-    
-    // No need for delay here as it might cause race conditions
-    
   } catch (error) {
     console.error('Error applying filter:', error);
   }
@@ -170,14 +168,11 @@ function* applyFilterSaga(): Generator<any, void, any> {
 // Worker saga for resetting filters
 function* resetFilterSaga(): Generator<any, void, any> {
   try {
-    yield delay(300);
-    
     // Clear URL params
-    window.history.pushState({}, '', window.location.pathname);
+    window.history.replaceState({}, '', window.location.pathname);
     
-    // Chỉ reset products state, không dispatch fetchProducts
+    // Reset products state
     yield put(resetProducts());
-    
   } catch (error) {
     console.error('Error resetting filters:', error);
   }
