@@ -6,7 +6,8 @@ import { Filter } from './filter';
 import { ProductList } from './product-list';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
-import { fetchProducts } from '../../store/slices/productsSlice';
+import { setFiltersFromUrl } from '../../store/slices/filterSlice';
+import { useQueryParams } from '../../hooks/useQueryParams';
 
 const StyledMarketplacePage = styled.div`
   display: grid;
@@ -21,11 +22,34 @@ const StyledMarketplacePage = styled.div`
 export const MarketplacePage = () => {
   const { isCollapsed } = useBreakpoint();
   const dispatch = useDispatch();
+  const { getParams } = useQueryParams();
+  console.log('getParams', getParams)
   
-  // Fetch products when component mounts
+  // Read URL parameters and initialize filter state
   useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch]);
+    console.log('MarketplacePage useEffect running - Reading URL params');
+    
+    // Get all URL parameters
+    const urlParams = getParams();
+    console.log('Raw URL params from useQueryParams:', urlParams);
+    
+    // Update Redux state with URL parameters
+    if (Object.keys(urlParams).length > 0) {
+      console.log('URL parameters detected, dispatching to Redux:', urlParams);
+      
+      // Log specific param types for debugging
+      if (urlParams.minPrice) console.log('minPrice type:', typeof urlParams.minPrice, 'value:', urlParams.minPrice);
+      if (urlParams.maxPrice) console.log('maxPrice type:', typeof urlParams.maxPrice, 'value:', urlParams.maxPrice);
+      if (urlParams.tier) console.log('tier type:', typeof urlParams.tier, 'value:', urlParams.tier);
+      if (urlParams.theme) console.log('theme type:', typeof urlParams.theme, 'value:', urlParams.theme);
+      if (urlParams.categories) console.log('categories type:', typeof urlParams.categories, 'value:', urlParams.categories);
+      
+      dispatch(setFiltersFromUrl(urlParams));
+      console.log('Dispatched setFiltersFromUrl action');
+    } else {
+      console.log('No URL parameters found');
+    }
+  }, [dispatch, getParams]);
 
   return (
     <Container>

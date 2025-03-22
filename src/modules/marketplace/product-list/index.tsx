@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Skeleton, Input, Flex, Typography, Button, Empty, Alert, Space, Grid } from 'antd';
 import { SearchOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
@@ -74,6 +74,9 @@ export const ProductList = () => {
   const dispatch = useAppDispatch();
   const { screens } = useBreakpoint();
   
+  // Dùng ref để theo dõi lần load đầu tiên
+  const isInitialMount = useRef(true);
+  
   // Get products state from Redux
   const { 
     data: products = [], 
@@ -89,8 +92,15 @@ export const ProductList = () => {
   
   // Fetch products when component mounts or appliedFilters change
   useEffect(() => {
-    console.log("Applied filters changed, fetching products:", appliedFilters);
-    dispatch(fetchProducts());
+    // Luôn fetch products khi component mount
+    if (isInitialMount.current) {
+      console.log("Initial mount, fetching products with filters:", appliedFilters);
+      isInitialMount.current = false;
+      dispatch(fetchProducts());
+    } else {
+      console.log("Applied filters changed, fetching products:", appliedFilters);
+      dispatch(fetchProducts());
+    }
   }, [dispatch, appliedFilters]);
   
   console.log("ProductList render với", products.length, "sản phẩm:", products);

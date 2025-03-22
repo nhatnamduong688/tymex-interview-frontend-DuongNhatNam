@@ -81,15 +81,95 @@ const filterSlice = createSlice({
     },
     
     // Set filters from URL params
-    setFiltersFromUrl: (state, action: PayloadAction<Partial<FilterState['formValues']>>) => {
+    setFiltersFromUrl: (state, action: PayloadAction<Record<string, any>>) => {
+      console.log('============= FILTER SLICE: setFiltersFromUrl =============');
+      console.log('Received action payload:', JSON.stringify(action.payload, null, 2));
+      
+      // Tạo một bản sao của payload để tránh mutation
+      const params = { ...action.payload };
+      console.log('Cloned params:', params);
+      
+      // Xử lý search/keyword để đảm bảo đồng bộ
+      if (params.search) {
+        console.log('Search param detected:', params.search);
+        // Đảm bảo cả search và keyword đều có giá trị
+        params.keyword = params.search;
+      } else if (params.keyword) {
+        console.log('Keyword param detected:', params.keyword);
+        // Nếu chỉ có keyword, đảm bảo search cũng có giá trị
+        params.search = params.keyword;
+      }
+      
+      // Handle price range for UI
+      if (params.minPrice || params.maxPrice) {
+        console.log('Price range params detected:');
+        console.log('minPrice:', params.minPrice, typeof params.minPrice);
+        console.log('maxPrice:', params.maxPrice, typeof params.maxPrice);
+        
+        const minPrice = parseFloat(params.minPrice) || 0;
+        const maxPrice = parseFloat(params.maxPrice) || 200;
+        
+        console.log('Parsed values:', minPrice, maxPrice);
+        
+        // Thêm priceRange cho UI nhưng giữ nguyên minPrice/maxPrice cho API
+        params.priceRange = [minPrice, maxPrice];
+        console.log('Created priceRange:', params.priceRange);
+        
+        // KHÔNG xóa minPrice/maxPrice để API có thể sử dụng trực tiếp
+        console.log('Added priceRange while preserving minPrice/maxPrice for API:', params);
+      } else {
+        console.log('No price range params found in URL');
+      }
+      
+      // Ensure categories is always an array
+      if (params.categories) {
+        console.log('Categories before processing:', params.categories, typeof params.categories);
+        
+        if (!Array.isArray(params.categories)) {
+          params.categories = [params.categories];
+          console.log('Converted categories to array:', params.categories);
+        } else {
+          console.log('Categories already an array, no conversion needed');
+        }
+      } else {
+        console.log('No categories found in URL params');
+      }
+      
+      // Check tier and theme params
+      if (params.tier) {
+        console.log('Tier from URL:', params.tier, typeof params.tier);
+      }
+      
+      if (params.theme) {
+        console.log('Theme from URL:', params.theme, typeof params.theme);
+      }
+      
+      console.log('Final params before updating state:', params);
+      
+      // Đảm bảo priceRange là array
+      if (params.priceRange && !Array.isArray(params.priceRange)) {
+        try {
+          params.priceRange = JSON.parse(params.priceRange);
+        } catch (e) {
+          // Nếu không parse được, set giá trị mặc định
+          params.priceRange = [0, 200];
+        }
+      }
+      
+      // Update both formValues and appliedFilters
       state.formValues = {
-        ...initialState.formValues,
-        ...action.payload,
+        ...state.formValues,
+        ...params
       };
+      
       state.appliedFilters = {
-        ...initialState.appliedFilters,
-        ...action.payload,
+        ...state.appliedFilters,
+        ...params
       };
+      
+      console.log('Updated filter state - formValues:', state.formValues);
+      console.log('Updated filter state - appliedFilters:', state.appliedFilters);
+      console.log('============= END FILTER SLICE =============');
     },
   },
 });

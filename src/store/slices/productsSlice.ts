@@ -32,8 +32,31 @@ export const fetchProducts = createAsyncThunk<
   'products/fetchAll',
   async (_, { getState, rejectWithValue }) => {
     try {
+      console.log('============= THUNK: fetchProducts =============');
       const state = getState();
       const filters = state.filter.appliedFilters;
+      
+      console.log("fetchProducts thunk gọi với filters từ state:", 
+                  JSON.stringify(filters, null, 2));
+      
+      // Log trực tiếp các giá trị quan trọng
+      if (filters.minPrice || filters.maxPrice) {
+        console.log('Direct minPrice/maxPrice found:');
+        console.log('- minPrice:', filters.minPrice, typeof filters.minPrice);
+        console.log('- maxPrice:', filters.maxPrice, typeof filters.maxPrice);
+      }
+      
+      if (filters.priceRange) {
+        console.log('priceRange found:', filters.priceRange);
+      }
+      
+      if (filters.tier) {
+        console.log('tier found:', filters.tier, typeof filters.tier);
+      }
+      
+      if (filters.theme) {
+        console.log('theme found:', filters.theme, typeof filters.theme);
+      }
       
       console.log("Gọi API với filters:", filters);
       const response = await api.getProducts({
@@ -42,11 +65,19 @@ export const fetchProducts = createAsyncThunk<
         _limit: 10
       });
       
+      console.log("API response received:", {
+        dataLength: response.data.length,
+        totalCount: response.headers['x-total-count']
+      });
+      
+      console.log('============= END THUNK: fetchProducts =============');
+      
       return {
         data: response.data,
         totalCount: parseInt(response.headers['x-total-count'] || '0')
       };
     } catch (error: any) {
+      console.error("Error in fetchProducts thunk:", error);
       return rejectWithValue(error.message || 'Failed to fetch products');
     }
   }

@@ -76,6 +76,10 @@ const convertFiltersToQueryParams = (
   page: number = 1,
   pageSize: number = 12
 ): Record<string, string> => {
+  console.log('============= API: convertFiltersToQueryParams =============');
+  console.log('Input filters:', JSON.stringify(filters, null, 2));
+  console.log('Page:', page, 'PageSize:', pageSize);
+  
   const queryParams: Record<string, string> = {};
   
   // Add pagination
@@ -85,50 +89,79 @@ const convertFiltersToQueryParams = (
   // Add search/keyword filter
   if (filters.search) {
     queryParams.title_like = filters.search;
+    console.log('Added search filter:', filters.search);
   }
   
-  // Add price range filter
-  if (filters.priceRange && Array.isArray(filters.priceRange) && filters.priceRange.length === 2) {
+  // Handle direct minPrice/maxPrice (from URL) or priceRange (from Redux)
+  if (filters.minPrice || filters.maxPrice) {
+    // Directly from URL parameters
+    console.log('Found minPrice/maxPrice directly in filters:');
+    console.log('minPrice:', filters.minPrice, typeof filters.minPrice);
+    console.log('maxPrice:', filters.maxPrice, typeof filters.maxPrice);
+    
+    if (filters.minPrice) {
+      queryParams.price_gte = String(filters.minPrice);
+      console.log('Added price_gte from minPrice:', queryParams.price_gte);
+    }
+    if (filters.maxPrice) {
+      queryParams.price_lte = String(filters.maxPrice);
+      console.log('Added price_lte from maxPrice:', queryParams.price_lte);
+    }
+    console.log('Using direct min/max price from URL params');
+  } else if (filters.priceRange && Array.isArray(filters.priceRange) && filters.priceRange.length === 2) {
+    // From Redux state's priceRange array
+    console.log('Using priceRange array:', filters.priceRange);
     queryParams.price_gte = String(filters.priceRange[0]);
     queryParams.price_lte = String(filters.priceRange[1]);
+    console.log('Added price_gte/price_lte from priceRange:', queryParams.price_gte, queryParams.price_lte);
+  } else {
+    console.log('No price filters found');
   }
   
   // Add tier filter
   if (filters.tier) {
-    queryParams.tier = filters.tier;
+    queryParams.tier = String(filters.tier);
+    console.log('Added tier filter:', filters.tier, typeof filters.tier);
   }
   
   // Add theme filter
   if (filters.theme) {
-    queryParams.theme = filters.theme;
+    queryParams.theme = String(filters.theme);
+    console.log('Added theme filter:', filters.theme, typeof filters.theme);
   }
   
   // Add sort by time
   if (filters.sortTime) {
     queryParams._sort = 'createdAt';
     queryParams._order = filters.sortTime === SortType.Ascending ? 'asc' : 'desc';
+    console.log('Added time sort:', queryParams._order);
   }
   
   // Add sort by price
   if (filters.sortPrice) {
     queryParams._sort = 'price';
     queryParams._order = filters.sortPrice === SortType.Ascending ? 'asc' : 'desc';
+    console.log('Added price sort:', queryParams._order);
   }
   
   // Add categories filter (json-server needs multiple params for array values)
   if (filters.categories && Array.isArray(filters.categories) && filters.categories.length > 0) {
+    console.log('Processing categories filter:', filters.categories);
     // For json-server, we can use multiple category params or category_like
     // Using category param for exact match
     if (filters.categories.length === 1) {
       queryParams.category = filters.categories[0];
+      console.log('Added single category filter:', queryParams.category);
     } else {
       // Using a simple approach - this is not ideal for multiple categories
       // but works for demonstration
       queryParams.category_like = filters.categories.join('|'); // Using regex OR
+      console.log('Added multiple categories filter with OR:', queryParams.category_like);
     }
   }
   
-  console.log('API Query Params:', queryParams); // Debug log
+  console.log('API Query Params (FINAL):', queryParams);
+  console.log('============= END API convertFiltersToQueryParams =============');
   
   return queryParams;
 };
