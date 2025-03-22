@@ -88,16 +88,64 @@ const filterSlice = createSlice({
   initialState,
   reducers: {
     // Update form values without applying filter
-    updateFormValues: (state, action: PayloadAction<Partial<FilterState['formValues']>>) => {
+    updateFormValues: (state, action: PayloadAction<Partial<TFilterProduct>>) => {
+      console.log('Updating form values with:', action.payload);
+      
+      // Handle updates to formValues
       state.formValues = {
         ...state.formValues,
-        ...action.payload,
+        ...action.payload
       };
+      
+      // Handle price range specifically
+      if (action.payload.priceRange && Array.isArray(action.payload.priceRange) && action.payload.priceRange.length === 2) {
+        // Update minPrice and maxPrice based on priceRange
+        state.formValues.minPrice = action.payload.priceRange[0];
+        state.formValues.maxPrice = action.payload.priceRange[1];
+        console.log('Updated price range in Redux:', 
+          state.formValues.priceRange, 
+          'min:', state.formValues.minPrice, 
+          'max:', state.formValues.maxPrice
+        );
+      }
+      
+      // For direct updates to minPrice/maxPrice, update priceRange as well
+      if (action.payload.minPrice !== undefined || action.payload.maxPrice !== undefined) {
+        const minPrice = action.payload.minPrice !== undefined ? 
+          action.payload.minPrice : (state.formValues.minPrice || 0);
+        const maxPrice = action.payload.maxPrice !== undefined ? 
+          action.payload.maxPrice : (state.formValues.maxPrice || 200);
+        
+        state.formValues.priceRange = [minPrice, maxPrice];
+        console.log('Updated priceRange from min/max:', state.formValues.priceRange);
+      }
     },
     
     // Apply filter (copy form values to applied filters)
     applyFilter: (state) => {
+      console.log('Applying filter from form values:', state.formValues);
+      
+      // Log tier and theme specifically
+      if (state.formValues.tier) {
+        console.log(`Applying tier filter: "${state.formValues.tier}" of type ${typeof state.formValues.tier}`);
+      }
+      
+      if (state.formValues.theme) {
+        console.log(`Applying theme filter: "${state.formValues.theme}" of type ${typeof state.formValues.theme}`);
+      }
+      
+      // Ensure string types for tier and theme
+      if (state.formValues.tier) {
+        state.formValues.tier = String(state.formValues.tier);
+      }
+      
+      if (state.formValues.theme) {
+        state.formValues.theme = String(state.formValues.theme);
+      }
+      
       state.appliedFilters = { ...state.formValues };
+      
+      console.log('Applied filters:', state.appliedFilters);
     },
     
     // Apply just the search part of filter 
@@ -137,135 +185,76 @@ const filterSlice = createSlice({
     
     // Set filters from URL params
     setFiltersFromUrl: (state, action: PayloadAction<Record<string, any>>) => {
-      console.log('============= FILTER SLICE: setFiltersFromUrl =============');
-      console.log('Received action payload:', JSON.stringify(action.payload, null, 2));
+      const urlParams = action.payload;
+      console.log('FILTER SLICE: Setting filters from URL params:', urlParams);
       
-      // Tạo một bản sao của payload để tránh mutation
-      const params = { ...action.payload };
-      console.log('Cloned params:', params);
+      // Deep clone parameter values to avoid reference issues
+      let updatedValues = { ...state.formValues };
       
-      // Xử lý search/keyword để đảm bảo đồng bộ
-      if (params.search) {
-        console.log('Search param detected:', params.search);
-        // Đảm bảo cả search và keyword đều có giá trị
-        params.keyword = params.search;
-      } else if (params.keyword) {
-        console.log('Keyword param detected:', params.keyword);
-        // Nếu chỉ có keyword, đảm bảo search cũng có giá trị
-        params.search = params.keyword;
+      // Apply URL params to form values
+      if (urlParams.search) {
+        const searchTerm = String(urlParams.search);
+        updatedValues.search = searchTerm;
+        updatedValues.keyword = searchTerm;
+        console.log(`Setting search/keyword in state to: "${searchTerm}"`);
       }
       
-      // Handle price range for UI
-      if (params.minPrice || params.maxPrice) {
-        console.log('Price range params detected:');
-        console.log('minPrice:', params.minPrice, typeof params.minPrice);
-        console.log('maxPrice:', params.maxPrice, typeof params.maxPrice);
+      // Handle minPrice & maxPrice from URL
+      if (urlParams.minPrice !== undefined || urlParams.maxPrice !== undefined) {
+        // Get minPrice from URL or default to 0
+        const minPrice = urlParams.minPrice !== undefined 
+          ? Number(urlParams.minPrice) 
+          : (state.formValues.minPrice || 0);
+          
+        // Get maxPrice from URL or default to 200
+        const maxPrice = urlParams.maxPrice !== undefined 
+          ? Number(urlParams.maxPrice) 
+          : (state.formValues.maxPrice || 200);
         
-        // Đảm bảo chuyển đổi đúng kiểu dữ liệu
-        const minPrice = params.minPrice !== undefined ? parseFloat(params.minPrice) : 0;
-        const maxPrice = params.maxPrice !== undefined ? parseFloat(params.maxPrice) : 200;
+        // Set min and max price as numbers
+        updatedValues.minPrice = minPrice;
+        updatedValues.maxPrice = maxPrice;
         
-        console.log('Parsed values:', minPrice, maxPrice);
+        // IMPORTANT: Also update priceRange to match for slider display
+        updatedValues.priceRange = [minPrice, maxPrice];
         
-        // Standardize: luôn tạo priceRange cho UI từ minPrice/maxPrice
-        params.priceRange = [minPrice, maxPrice];
-        
-        // Cập nhật lại minPrice/maxPrice (đảm bảo là số, không phải chuỗi)
-        params.minPrice = minPrice;
-        params.maxPrice = maxPrice;
-        
-        console.log('Created priceRange and updated min/max:', params);
-      } else if (params.priceRange) {
-        console.log('priceRange param detected:', params.priceRange);
-        
-        // Đảm bảo priceRange là array
-        let priceRange = params.priceRange;
-        if (!Array.isArray(priceRange)) {
-          try {
-            priceRange = JSON.parse(params.priceRange);
-          } catch (e) {
-            // Nếu không parse được, set giá trị mặc định
-            priceRange = [0, 200];
-          }
-        }
-        
-        // Đảm bảo priceRange đúng format và có 2 phần tử
-        if (!Array.isArray(priceRange) || priceRange.length !== 2) {
-          priceRange = [0, 200];
-        }
-        
-        params.priceRange = priceRange;
-        // Đồng bộ lại minPrice/maxPrice
-        params.minPrice = priceRange[0];
-        params.maxPrice = priceRange[1];
-        
-        console.log('Standardized priceRange and created min/max:', params);
-      } else {
-        console.log('No price range params found in URL, using defaults');
-        
-        // Set default values nếu không có params
-        params.priceRange = [0, 200];
-        params.minPrice = 0;
-        params.maxPrice = 200;
+        console.log(`Setting price range from URL: [${minPrice}, ${maxPrice}]`);
       }
       
-      // Ensure categories is always an array
-      if (params.categories) {
-        console.log('Categories before processing:', params.categories, typeof params.categories);
-        
-        if (!Array.isArray(params.categories)) {
-          params.categories = [params.categories];
-          console.log('Converted categories to array:', params.categories);
-        } else {
-          console.log('Categories already an array, no conversion needed');
-        }
-      } else {
-        console.log('No categories found in URL params');
-        params.categories = [];
+      if (urlParams.tier) {
+        // Ensure tier is treated as a string value
+        updatedValues.tier = String(urlParams.tier);
+        console.log(`Setting tier in state to: "${updatedValues.tier}"`);
       }
       
-      // Check and standardize tier and theme params
-      if (params.tier) {
-        console.log('Tier from URL:', params.tier, typeof params.tier);
-        // Ensure tier is a string
-        params.tier = String(params.tier);
+      if (urlParams.theme) {
+        // Ensure theme is treated as a string value
+        updatedValues.theme = String(urlParams.theme);
+        console.log(`Setting theme in state to: "${updatedValues.theme}"`);
       }
       
-      if (params.theme) {
-        console.log('Theme from URL:', params.theme, typeof params.theme);
-        // Ensure theme is a string
-        params.theme = String(params.theme);
+      if (urlParams.sortTime) {
+        updatedValues.sortTime = String(urlParams.sortTime);
       }
       
-      // Handling sortTime and sortPrice
-      if (params.sortTime) {
-        console.log('sortTime from URL:', params.sortTime);
-        // Ensure it's a valid sort value
-        params.sortTime = SortType[params.sortTime as keyof typeof SortType] || SortType.Ascending;
+      if (urlParams.sortPrice) {
+        updatedValues.sortPrice = String(urlParams.sortPrice);
       }
       
-      if (params.sortPrice) {
-        console.log('sortPrice from URL:', params.sortPrice);
-        // Ensure it's a valid sort value
-        params.sortPrice = SortType[params.sortPrice as keyof typeof SortType] || SortType.Ascending;
+      if (urlParams.categories) {
+        updatedValues.categories = Array.isArray(urlParams.categories) 
+          ? urlParams.categories 
+          : [urlParams.categories];
       }
       
-      console.log('Final params before updating state:', params);
+      // Update form values state
+      state.formValues = updatedValues;
       
-      // Update both formValues and appliedFilters
-      state.formValues = {
-        ...state.formValues,
-        ...params
-      };
+      // IMPORTANT: Also update applied filters to match - this ensures filters are actually applied
+      state.appliedFilters = { ...updatedValues };
       
-      state.appliedFilters = {
-        ...state.appliedFilters,
-        ...params
-      };
-      
-      console.log('Updated filter state - formValues:', state.formValues);
-      console.log('Updated filter state - appliedFilters:', state.appliedFilters);
-      console.log('============= END FILTER SLICE =============');
+      console.log('FILTER SLICE: Updated form values from URL:', state.formValues);
+      console.log('FILTER SLICE: Updated applied filters from URL:', state.appliedFilters);
     },
     
     // Update category filter

@@ -28,11 +28,15 @@ const initialState: ProductsState = {
 // Thunk to fetch products
 export const fetchProducts = createAsyncThunk<
   { data: TProduct[]; totalCount: number },
-  Record<string, any> | undefined,
-  { rejectValue: string }
->('products/fetchProducts', async (filters, { rejectWithValue }) => {
+  void,
+  { rejectValue: string; state: RootState }
+>('products/fetchProducts', async (_, { rejectWithValue, getState }) => {
   try {
-    console.log('fetchProducts thunk called with filters:', filters);
+    // Get current filters state from Redux
+    const state = getState();
+    const filters = state.filter.appliedFilters;
+    
+    console.log('fetchProducts thunk accessing Redux filters:', filters);
     
     const response = await productApi.getProducts(filters, 1, initialState.limit);
     
@@ -59,16 +63,16 @@ export const fetchProducts = createAsyncThunk<
 export const fetchMoreProducts = createAsyncThunk<
   { data: TProduct[]; totalCount: number },
   void,
-  { rejectValue: string; state: { products: ProductsState; filter?: any } }
+  { rejectValue: string; state: RootState }
 >('products/fetchMoreProducts', async (_, { getState, rejectWithValue }) => {
   try {
     const state = getState();
     const { products } = state;
     const { page, limit, hasMore } = products;
-    // Handle the case where filter might not exist in state yet
-    const filters = state.filter?.appliedFilters || {};
+    // Get filters directly from filter slice
+    const filters = state.filter.appliedFilters;
     
-    console.log('fetchMoreProducts thunk called with:', {
+    console.log('fetchMoreProducts thunk with filters:', filters, {
       currentPage: page,
       nextPage: page + 1,
       hasMore,
@@ -103,7 +107,6 @@ export const fetchMoreProducts = createAsyncThunk<
     };
   } catch (error: any) {
     console.error('Error in fetchMoreProducts thunk:', error);
-    
     return rejectWithValue(
       error.message || 'Failed to fetch more products'
     );

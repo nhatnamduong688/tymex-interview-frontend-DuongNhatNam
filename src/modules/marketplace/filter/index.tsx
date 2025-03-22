@@ -104,14 +104,46 @@ export function Filter() {
   };
 
   const handleSubmit = (values: TFilterProduct) => {
-    // @ts-ignore - Type mismatch can be safely ignored here
-    dispatch(updateFormValues(values));
+    // Log tất cả giá trị trước khi xử lý
+    console.log('Filter handleSubmit received values:', JSON.stringify(values, null, 2));
+    
+    // Ensure price range is properly set
+    if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
+      // Make sure minPrice and maxPrice are also set based on priceRange
+      values.minPrice = values.priceRange[0];
+      values.maxPrice = values.priceRange[1];
+      console.log('Setting price range from form:', values.priceRange, 'min:', values.minPrice, 'max:', values.maxPrice);
+    }
+    
+    // Đảm bảo các giá trị sortTime và sortPrice được xử lý đúng
+    if (values.sortTime) {
+      console.log('Processing sortTime:', values.sortTime);
+    }
+    
+    if (values.sortPrice) {
+      console.log('Processing sortPrice:', values.sortPrice);
+    }
+    
+    // Create a copy of values to avoid reference issues
+    const processedValues = {...values};
+    
+    // @ts-ignore - Type mismatch can be safely ignored
+    dispatch(updateFormValues(processedValues));
+    
+    // Log state trước khi apply filter
+    console.log('About to apply filter with values:', processedValues);
+    
     dispatch(applyFilter());
     
     // Close drawer if it's open
     if (isFilterVisible) {
       closeDrawer();
     }
+  };
+
+  // Handle price range changes in drawer
+  const handleDrawerPriceRangeChange = (value: [number, number]) => {
+    form.setFieldsValue({ priceRange: value });
   };
 
   return (
@@ -185,6 +217,8 @@ export function Filter() {
               range
               min={0}
               max={200}
+              defaultValue={formValues.priceRange || [0, 200]}
+              onChange={handleDrawerPriceRangeChange}
               tipFormatter={(value) => `$${value}`}
             />
           </Form.Item>

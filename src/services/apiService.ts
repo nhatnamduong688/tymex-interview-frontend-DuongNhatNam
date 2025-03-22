@@ -9,6 +9,7 @@ export interface ApiResponse<T> {
     code?: string;
     details?: any;
   };
+  headers?: any;
 }
 
 // Base API configuration
@@ -18,13 +19,15 @@ interface ApiConfig {
   headers?: Record<string, string>;
 }
 
-// Request options
-interface RequestOptions {
+// Define request options interface
+export interface RequestOptions {
+  headers?: Record<string, string>;
   retries?: number;
   retryDelay?: number;
   withCredentials?: boolean;
   cache?: boolean;
   cacheTime?: number;
+  directQueryString?: string; // Added for direct URL query string support
 }
 
 // API Client options
@@ -149,11 +152,17 @@ class ApiClient {
     method: string,
     url: string,
     data?: any,
-    options?: RequestOptions & { params?: any }
+    options?: RequestOptions & { params?: any, directQueryString?: string }
   ): Promise<ApiResponse<T>> {
     // Merge options with defaults
     const opts = { ...this.defaultOptions, ...options };
-    const { retries, retryDelay, cache, cacheTime, ...requestOptions } = opts;
+    const { retries, retryDelay, cache, cacheTime, directQueryString, ...requestOptions } = opts;
+    
+    // Handle direct query string if provided
+    if (directQueryString) {
+      console.log(`Using direct query string: ${directQueryString}`);
+      url = `${url}?${directQueryString}`;
+    }
     
     // Check cache for GET requests
     if (method === 'GET' && cache) {
@@ -200,6 +209,7 @@ class ApiClient {
         return {
           data: response.data,
           success: true,
+          headers: response.headers,
         };
       } catch (error) {
         lastError = error;
@@ -236,7 +246,30 @@ class ApiClient {
    * HTTP GET request
    */
   async get<T>(url: string, params?: any, options?: RequestOptions): Promise<ApiResponse<T>> {
-    return this.request<T>('GET', url, undefined, { ...options, params });
+    // Detect if the URL already contains query parameters
+    if (url.includes('?') && !params) {
+      // Extract the query string
+      const [baseUrl, queryString] = url.split('?');
+      console.log(`Using URL with embedded query string: ${queryString}`);
+      
+      // Use the directQueryString option to pass the query string directly
+      return this.request<T>('GET', baseUrl, null, {
+        ...options,
+        directQueryString: queryString
+      });
+    }
+    
+    // Special handling for sort parameters
+    if (params && (params._sort || params._order)) {
+      console.log('Special handling for sort parameters:', 
+        params._sort ? `Sort by: ${params._sort}` : '', 
+        params._order ? `Order: ${params._order}` : '');
+    }
+    
+    return this.request<T>('GET', url, null, {
+      ...options,
+      params,
+    });
   }
   
   /**

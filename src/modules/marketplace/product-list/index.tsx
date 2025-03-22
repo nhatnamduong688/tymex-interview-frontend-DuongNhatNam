@@ -137,15 +137,9 @@ export const ProductList = () => {
   
   // Fetch products when component mounts or appliedFilters change
   useEffect(() => {
-    // Luôn fetch products khi component mount
-    if (isInitialMount.current) {
-      console.log("Initial mount, fetching products with filters:", appliedFilters);
-      isInitialMount.current = false;
-      dispatch(fetchProducts());
-    } else {
-      console.log("Applied filters changed, fetching products:", appliedFilters);
-      dispatch(fetchProducts());
-    }
+    // Luôn fetch products khi component mount hoặc filters thay đổi
+    console.log("Fetching products with filters:", appliedFilters);
+    dispatch(fetchProducts());
   }, [dispatch, appliedFilters]);
   
   console.log("ProductList render với", products.length, "sản phẩm:", products);

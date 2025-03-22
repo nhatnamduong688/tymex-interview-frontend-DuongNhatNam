@@ -76,6 +76,9 @@ export const FilterForm: React.FC<FilterFormProps> = ({
           response.data.map((product: any) => product.theme).filter(Boolean)
         )) as string[];
         
+        console.log("API TIERS (raw values):", uniqueTiers);
+        console.log("API THEMES (raw values):", uniqueThemes);
+        
         setTiers(uniqueTiers);
         setThemes(uniqueThemes);
       } catch (error) {
@@ -89,20 +92,42 @@ export const FilterForm: React.FC<FilterFormProps> = ({
   }, []);
 
   // Generate tier options from API data
-  const tierOptions = tiers.map(tier => (
-    <Option key={tier} value={tier}>{tier}</Option>
-  ));
+  const tierOptions = tiers.map(tier => {
+    console.log(`Creating tier option: ${tier}`);
+    return <Option key={tier} value={tier}>{tier}</Option>
+  });
 
   // Generate theme options from API data
-  const themeOptions = themes.map(theme => (
-    <Option key={theme} value={theme}>{theme}</Option>
-  ));
+  const themeOptions = themes.map(theme => {
+    console.log(`Creating theme option: ${theme}`);
+    return <Option key={theme} value={theme}>{theme}</Option>
+  });
+
+  const handlePriceRangeChange = (newRange: [number, number]) => {
+    console.log('Price range changed:', newRange);
+    form.setFieldsValue({ priceRange: newRange });
+  };
 
   const handleFinish = (values: TFilterProduct) => {
     // Đảm bảo cả search và keyword đều được gửi đi
     if (values.keyword) {
       values.search = values.keyword;
     }
+    
+    // Đảm bảo có giá tiền min/max nếu có priceRange
+    if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
+      values.minPrice = values.priceRange[0];
+      values.maxPrice = values.priceRange[1];
+      console.log('Setting price range:', values.priceRange, 'min:', values.minPrice, 'max:', values.maxPrice);
+    }
+
+    // Log the form submission values with detailed type info
+    console.log('Form submitted with values:', JSON.stringify(values, null, 2));
+    console.log('Form tier value:', values.tier, 'of type', typeof values.tier);
+    console.log('Form theme value:', values.theme, 'of type', typeof values.theme);
+    console.log('Form sortTime value:', values.sortTime, 'of type', typeof values.sortTime);
+    console.log('Form sortPrice value:', values.sortPrice, 'of type', typeof values.sortPrice);
+    
     onSubmit(values);
   };
 
@@ -110,6 +135,24 @@ export const FilterForm: React.FC<FilterFormProps> = ({
   console.log('FilterForm currentValues:', currentValues);
   console.log('keyword value:', form.getFieldValue('keyword'));
   console.log('priceRange value:', form.getFieldValue('priceRange'));
+  console.log('tier value:', form.getFieldValue('tier'));
+  console.log('theme value:', form.getFieldValue('theme'));
+  console.log('sortTime value:', form.getFieldValue('sortTime'));
+  console.log('sortPrice value:', form.getFieldValue('sortPrice'));
+  
+  // Update form when currentValues changes from Redux
+  useEffect(() => {
+    console.log('FilterForm: Updating form with new values from Redux:', currentValues);
+    form.setFieldsValue({
+      ...currentValues,
+      // Đảm bảo keyword được hiển thị từ cả search hoặc keyword
+      keyword: currentValues.keyword || currentValues.search,
+      // Đảm bảo các giá trị khác được cập nhật đúng
+      priceRange: currentValues.priceRange || [0, 200],
+      sortTime: currentValues.sortTime || '',
+      sortPrice: currentValues.sortPrice || ''
+    });
+  }, [currentValues, form]);
   
   return (
     <Form
@@ -143,6 +186,7 @@ export const FilterForm: React.FC<FilterFormProps> = ({
             min={0}
             max={200}
             defaultValue={currentValues.priceRange || [0, 200]}
+            onChange={handlePriceRangeChange}
             tipFormatter={value => `$${value}`}
           />
         </SliderContainer>
