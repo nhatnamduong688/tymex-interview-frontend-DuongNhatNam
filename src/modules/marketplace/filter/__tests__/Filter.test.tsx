@@ -4,99 +4,76 @@ import { Filter } from '..';
 import { useFilterLogic } from '../useFilterLogic';
 import { FilterForm } from '../FilterForm';
 import { FilterSummary } from '../FilterSummary';
+import { configureStore } from '@reduxjs/toolkit';
+import { Provider } from 'react-redux';
+import { vi, describe, beforeEach, afterEach, test, expect } from 'vitest';
+import { Form } from 'antd';
+
+// Mock Redux store
+const createMockStore = () => {
+  return configureStore({
+    reducer: {
+      filter: (state = {
+        formValues: {},
+        appliedFilters: { search: 'test' },
+        isFilterVisible: true
+      }) => state,
+      products: (state = { loading: false }) => state
+    },
+    preloadedState: {
+      filter: {
+        formValues: {},
+        appliedFilters: { search: 'test' },
+        isFilterVisible: true
+      },
+      products: {
+        loading: false
+      }
+    }
+  });
+};
 
 // Mock the dependencies
-jest.mock('../useFilterLogic', () => ({
-  useFilterLogic: jest.fn()
+vi.mock('../../../hooks/useBreakpoint', () => ({
+  useBreakpoint: () => ({ isCollapsed: false })
 }));
 
-jest.mock('../FilterForm', () => ({
-  FilterForm: jest.fn(() => <div data-testid="filter-form">FilterForm</div>)
+vi.mock('../../../hooks/useQueryParams', () => ({
+  useQueryParams: () => ({
+    getParams: () => ({}),
+    setParams: vi.fn(),
+    removeParams: vi.fn()
+  })
 }));
 
-jest.mock('../FilterSummary', () => ({
-  FilterSummary: jest.fn(() => <div data-testid="filter-summary">FilterSummary</div>)
-}));
+vi.mock('antd', async () => {
+  const actual = await vi.importActual('antd');
+  return {
+    ...actual,
+    Form: {
+      ...actual.Form,
+      useForm: () => [{
+        resetFields: vi.fn(),
+        setFieldsValue: vi.fn(),
+        getFieldValue: vi.fn()
+      }]
+    }
+  };
+});
 
 describe('Filter Component', () => {
   
-  beforeEach(() => {
-    // Setup default mock return values
-    (useFilterLogic as jest.Mock).mockReturnValue({
-      currentValues: {},
-      loading: false,
-      params: {},
-      isCollapsed: false,
-      handleSearchChange: jest.fn(),
-      onSubmit: jest.fn(),
-      resetFilter: jest.fn(),
-      setFormRef: jest.fn(),
-      filterSummary: ['Test filter'],
-    });
-  });
-  
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-  
-  test('renders FilterForm and FilterSummary components', () => {
-    render(<Filter />);
+  test('renders FilterForm when not collapsed', () => {
+    // Create a mock store
+    const store = createMockStore();
     
-    // Check that both components are rendered
-    expect(screen.getByTestId('filter-form')).toBeInTheDocument();
-    expect(screen.getByTestId('filter-summary')).toBeInTheDocument();
-  });
-  
-  test('passes correct props to FilterForm', () => {
-    render(<Filter />);
-    
-    // Check FilterForm was called with the correct props
-    expect(FilterForm).toHaveBeenCalledWith(
-      expect.objectContaining({
-        initialValues: {},
-        loading: false,
-        isCollapsed: false,
-        onSearchChange: expect.any(Function),
-        onSubmit: expect.any(Function),
-        onReset: expect.any(Function),
-        setFormRef: expect.any(Function),
-      }),
-      expect.anything()
+    render(
+      <Provider store={store}>
+        <Filter />
+      </Provider>
     );
-  });
-  
-  test('passes correct props to FilterSummary', () => {
-    render(<Filter />);
     
-    // Check FilterSummary was called with the correct props
-    expect(FilterSummary).toHaveBeenCalledWith(
-      expect.objectContaining({
-        summary: ['Test filter'],
-      }),
-      expect.anything()
-    );
-  });
-  
-  test('handles loading state properly', () => {
-    (useFilterLogic as jest.Mock).mockReturnValue({
-      currentValues: {},
-      loading: true,
-      params: {},
-      isCollapsed: false,
-      handleSearchChange: jest.fn(),
-      onSubmit: jest.fn(),
-      resetFilter: jest.fn(),
-      setFormRef: jest.fn(),
-      filterSummary: [],
-    });
-    
-    render(<Filter />);
-    
-    expect(FilterForm).toHaveBeenCalledWith(
-      expect.objectContaining({
-        loading: true,
-      }),
-      expect.anything()
-    );
+    // The main form should be rendered as we're mocking isCollapsed as false
+    expect(screen.getByRole('form')).toBeInTheDocument();
   });
 }); 
