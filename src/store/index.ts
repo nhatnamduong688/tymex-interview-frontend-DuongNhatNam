@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
 import createSagaMiddleware from 'redux-saga';
 import { rootSaga } from './sagas';
-import filterReducer from './slices/filterSlice';
-import productsReducer from './slices/productsSlice';
+import filterReducer from '../features/marketplace/store/filterSlice';
+import productsReducer from '../features/marketplace/store/productsSlice';
 import authReducer from './reducers/authReducer';
-import { urlSyncMiddleware } from './middleware/urlSyncMiddleware';
+import { urlSyncMiddleware } from '../core/store/middleware/urlSyncMiddleware';
 
 // Create saga middleware
 const sagaMiddleware = createSagaMiddleware();

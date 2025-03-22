@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import withPageLoading from "../../hoc/withPageLoading";
-import { MarketPlaceModule } from "../../modules/marketplace";
+import { MarketPlaceModule } from "../../features/marketplace";
 
 const Container = styled.div`
   min-height: 80vh;
