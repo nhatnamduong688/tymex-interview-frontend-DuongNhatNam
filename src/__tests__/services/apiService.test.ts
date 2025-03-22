@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import * as productApi from '../../services/productApi';
+import * as apiService from '../../services/apiService';
 
-describe('productApi', () => {
+describe('apiService', () => {
   it('should work correctly', () => {
     // Test will be implemented later
   });

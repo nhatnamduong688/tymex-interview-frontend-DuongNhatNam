@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:features": "vitest run 'src/features/**/*.test.{ts,tsx}' 'src/features/**/__tests__/*.test.{ts,tsx}'",
+    "test:shared": "vitest run 'src/shared/**/*.test.{ts,tsx}' 'src/shared/**/__tests__/*.test.{ts,tsx}'",
+    "test:core": "vitest run 'src/core/**/*.test.{ts,tsx}' 'src/core/**/__tests__/*.test.{ts,tsx}'"
   },
   "dependencies": {
     "@ant-design/icons": "^5.6.1",

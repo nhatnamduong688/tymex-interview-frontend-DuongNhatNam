@@ -202,15 +202,16 @@ const filterSlice = createSlice({
       // Handle minPrice & maxPrice from URL
       if (urlParams.minPrice) {
         const minPrice = Number(urlParams.minPrice);
-        state.formValues.priceRange = state.formValues.priceRange || [0, 200];
-        state.formValues.priceRange = [minPrice, state.formValues.priceRange[1]];
-        state.appliedFilters.minPrice = minPrice;
+        updatedValues.minPrice = minPrice;
+        updatedValues.priceRange = updatedValues.priceRange || [0, 200];
+        updatedValues.priceRange = [minPrice, updatedValues.priceRange[1]];
       }
+      
       if (urlParams.maxPrice) {
         const maxPrice = Number(urlParams.maxPrice);
-        state.formValues.priceRange = state.formValues.priceRange || [0, 200];
-        state.formValues.priceRange = [state.formValues.priceRange[0], maxPrice];
-        state.appliedFilters.maxPrice = maxPrice;
+        updatedValues.maxPrice = maxPrice;
+        updatedValues.priceRange = updatedValues.priceRange || [0, 200];
+        updatedValues.priceRange = [updatedValues.priceRange[0], maxPrice];
       }
       
       if (urlParams.tier) {
