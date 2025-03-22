@@ -38,7 +38,12 @@ export const fetchProducts = createAsyncThunk<
     
     console.log('fetchProducts thunk accessing Redux filters:', filters);
     
-    const response = await productApi.getProducts(filters, 1, initialState.limit);
+    const apiFilters = {
+      ...filters,
+      minPrice: filters.minPrice !== undefined ? String(filters.minPrice) : undefined,
+      maxPrice: filters.maxPrice !== undefined ? String(filters.maxPrice) : undefined,
+    };
+    const response = await productApi.getProducts(apiFilters, 1, initialState.limit);
     
     console.log('fetchProducts response:', {
       productsCount: response.data.length,
@@ -90,7 +95,12 @@ export const fetchMoreProducts = createAsyncThunk<
     
     // Fetch next page
     const nextPage = page + 1;
-    const response = await productApi.getProducts(filters, nextPage, limit);
+    const apiFilters = {
+      ...filters,
+      minPrice: filters.minPrice !== undefined ? String(filters.minPrice) : undefined,
+      maxPrice: filters.maxPrice !== undefined ? String(filters.maxPrice) : undefined,
+    };
+    const response = await productApi.getProducts(apiFilters, nextPage, limit);
     
     console.log('fetchMoreProducts response:', {
       newProductsCount: response.data.length,

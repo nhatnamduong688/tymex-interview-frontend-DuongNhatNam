@@ -116,7 +116,7 @@ const filterSlice = createSlice({
         const maxPrice = action.payload.maxPrice !== undefined ? 
           action.payload.maxPrice : (state.formValues.maxPrice || 200);
         
-        state.formValues.priceRange = [minPrice, maxPrice];
+        state.formValues.priceRange = [Number(minPrice), Number(maxPrice)];
         console.log('Updated priceRange from min/max:', state.formValues.priceRange);
       }
     },
@@ -200,25 +200,17 @@ const filterSlice = createSlice({
       }
       
       // Handle minPrice & maxPrice from URL
-      if (urlParams.minPrice !== undefined || urlParams.maxPrice !== undefined) {
-        // Get minPrice from URL or default to 0
-        const minPrice = urlParams.minPrice !== undefined 
-          ? Number(urlParams.minPrice) 
-          : (state.formValues.minPrice || 0);
-          
-        // Get maxPrice from URL or default to 200
-        const maxPrice = urlParams.maxPrice !== undefined 
-          ? Number(urlParams.maxPrice) 
-          : (state.formValues.maxPrice || 200);
-        
-        // Set min and max price as numbers
-        updatedValues.minPrice = minPrice;
-        updatedValues.maxPrice = maxPrice;
-        
-        // IMPORTANT: Also update priceRange to match for slider display
-        updatedValues.priceRange = [minPrice, maxPrice];
-        
-        console.log(`Setting price range from URL: [${minPrice}, ${maxPrice}]`);
+      if (urlParams.minPrice) {
+        const minPrice = Number(urlParams.minPrice);
+        state.formValues.priceRange = state.formValues.priceRange || [0, 200];
+        state.formValues.priceRange = [minPrice, state.formValues.priceRange[1]];
+        state.appliedFilters.minPrice = minPrice;
+      }
+      if (urlParams.maxPrice) {
+        const maxPrice = Number(urlParams.maxPrice);
+        state.formValues.priceRange = state.formValues.priceRange || [0, 200];
+        state.formValues.priceRange = [state.formValues.priceRange[0], maxPrice];
+        state.appliedFilters.maxPrice = maxPrice;
       }
       
       if (urlParams.tier) {

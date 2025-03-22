@@ -110,8 +110,8 @@ export function Filter() {
     // Ensure price range is properly set
     if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
       // Make sure minPrice and maxPrice are also set based on priceRange
-      values.minPrice = values.priceRange[0];
-      values.maxPrice = values.priceRange[1];
+      values.minPrice = String(values.priceRange[0]);
+      values.maxPrice = String(values.priceRange[1]);
       console.log('Setting price range from form:', values.priceRange, 'min:', values.minPrice, 'max:', values.maxPrice);
     }
     
@@ -218,7 +218,11 @@ export function Filter() {
               min={0}
               max={200}
               defaultValue={formValues.priceRange || [0, 200]}
-              onChange={handleDrawerPriceRangeChange}
+              onChange={(value: number | number[]) => {
+                if (Array.isArray(value) && value.length === 2) {
+                  handleDrawerPriceRangeChange(value as [number, number]);
+                }
+              }}
               tipFormatter={(value) => `$${value}`}
             />
           </Form.Item>

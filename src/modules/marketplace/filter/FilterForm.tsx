@@ -116,8 +116,8 @@ export const FilterForm: React.FC<FilterFormProps> = ({
     
     // Đảm bảo có giá tiền min/max nếu có priceRange
     if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
-      values.minPrice = values.priceRange[0];
-      values.maxPrice = values.priceRange[1];
+      values.minPrice = String(values.priceRange[0]);
+      values.maxPrice = String(values.priceRange[1]);
       console.log('Setting price range:', values.priceRange, 'min:', values.minPrice, 'max:', values.maxPrice);
     }
 
@@ -186,7 +186,11 @@ export const FilterForm: React.FC<FilterFormProps> = ({
             min={0}
             max={200}
             defaultValue={currentValues.priceRange || [0, 200]}
-            onChange={handlePriceRangeChange}
+            onChange={(value: number | number[]) => {
+              if (Array.isArray(value) && value.length === 2) {
+                handlePriceRangeChange(value as [number, number]);
+              }
+            }}
             tipFormatter={value => `$${value}`}
           />
         </SliderContainer>
