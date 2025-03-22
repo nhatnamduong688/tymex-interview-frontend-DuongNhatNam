@@ -3,6 +3,7 @@ import createSagaMiddleware from 'redux-saga';
 import { rootSaga } from './sagas';
 import filterReducer from './slices/filterSlice';
 import productsReducer from './slices/productsSlice';
+import authReducer from './reducers/authReducer';
 
 // Create saga middleware
 const sagaMiddleware = createSagaMiddleware();
@@ -12,6 +13,7 @@ export const store = configureStore({
   reducer: {
     filter: filterReducer,
     products: productsReducer,
+    auth: authReducer
   },
   middleware: (getDefaultMiddleware) => 
     getDefaultMiddleware({ thunk: true }).concat(sagaMiddleware),

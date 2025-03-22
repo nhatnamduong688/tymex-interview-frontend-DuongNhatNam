@@ -31,7 +31,7 @@ export const Filter: React.FC = () => {
     
     if (Object.keys(urlParams).length > 0) {
       // Đảm bảo minPrice và maxPrice được chuyển đúng thành priceRange
-      const formData = { ...urlParams };
+      const formData: any = { ...urlParams };
       
       // Nếu có minPrice/maxPrice, tạo priceRange cho form
       if (urlParams.minPrice || urlParams.maxPrice) {
@@ -155,7 +155,7 @@ export const Filter: React.FC = () => {
             onSubmit={onSubmit}
             onResetFilter={handleResetFilter}
             onSearchChange={handleSearchChange}
-            currentValues={formValues}
+            currentValues={formValues as any}
           />
         </StyledForm>
       )}

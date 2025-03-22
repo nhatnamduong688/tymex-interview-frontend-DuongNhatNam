@@ -9,7 +9,11 @@ import { useDispatch } from 'react-redux';
 import { setFiltersFromUrl } from '../../store/slices/filterSlice';
 import { useQueryParams } from '../../hooks/useQueryParams';
 
-const StyledMarketplacePage = styled.div`
+interface StyledMarketplacePageProps {
+  isCollapsed?: boolean;
+}
+
+const StyledMarketplacePage = styled.div<StyledMarketplacePageProps>`
   display: grid;
   grid-template-columns: ${(props) => props.isCollapsed ? '300px 1fr' : '1fr'};
   gap: 20px;

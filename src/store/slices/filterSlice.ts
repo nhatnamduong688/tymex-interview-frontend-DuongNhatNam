@@ -10,6 +10,9 @@ export interface FilterState {
     theme?: string;
     tier?: string;
     priceRange?: [number, number];
+    minPrice?: string;
+    maxPrice?: string;
+    keyword?: string;
   };
   appliedFilters: {
     search?: string;
@@ -17,6 +20,9 @@ export interface FilterState {
     theme?: string;
     tier?: string;
     priceRange?: [number, number];
+    minPrice?: string;
+    maxPrice?: string;
+    keyword?: string;
   };
   isFilterVisible: boolean;
 }
@@ -29,6 +35,9 @@ const initialState: FilterState = {
     theme: '',
     tier: '',
     priceRange: [0, 200],
+    minPrice: '',
+    maxPrice: '',
+    keyword: '',
   },
   appliedFilters: {
     search: '',
@@ -36,6 +45,9 @@ const initialState: FilterState = {
     theme: '',
     tier: '',
     priceRange: [0, 200],
+    minPrice: '',
+    maxPrice: '',
+    keyword: '',
   },
   isFilterVisible: false,
 };

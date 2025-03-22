@@ -25,9 +25,10 @@ export type TFilterProduct = {
   tier?: string;
   theme?: string;
   keyword?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  priceRange?: number[];
+  search?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  priceRange?: number[] | [number, number];
   sortTime?: string;
   sortPrice?: string;
   categories?: string[];
