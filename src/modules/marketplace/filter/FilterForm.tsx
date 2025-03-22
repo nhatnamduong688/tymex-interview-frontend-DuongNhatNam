@@ -2,7 +2,7 @@ import React from 'react';
 import { Form, Input, Button, Select, Slider, Divider, Row, Col } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
-import { ProductTheme, ProductTier, SortType } from '../../../enums/filter';
+import { SortType, ProductTheme, ProductTier } from '../../../enums/filter';
 import { TFilterProduct } from '../../../types/product';
 
 const { Option } = Select;
@@ -18,15 +18,6 @@ const FormFooter = styled.div`
   margin-top: 24px;
   gap: 12px;
 `;
-
-// Các tùy chọn cho select fields
-const tierOptions = Object.values(ProductTier).map(tier => (
-  <Option key={tier} value={tier}>{tier}</Option>
-));
-
-const themeOptions = Object.values(ProductTheme).map(theme => (
-  <Option key={theme} value={theme}>{theme}</Option>
-));
 
 const sortTimeOptions = [
   <Option key="asc" value={SortType.Ascending}>Oldest First</Option>,
@@ -55,6 +46,16 @@ export const FilterForm: React.FC<FilterFormProps> = ({
   onSearchChange,
   currentValues
 }) => {
+  // Generate option components for tiers from enum values
+  const tierOptions = Object.values(ProductTier).map(tier => (
+    <Option key={tier} value={tier}>{tier}</Option>
+  ));
+
+  // Generate theme options from enum values
+  const themeOptions = Object.values(ProductTheme).map(theme => (
+    <Option key={theme} value={theme}>{theme}</Option>
+  ));
+
   const handleFinish = (values: TFilterProduct) => {
     // Đảm bảo cả search và keyword đều được gửi đi
     if (values.keyword) {

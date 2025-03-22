@@ -7,24 +7,12 @@ import { useQueryParams } from "../../../hooks/useQueryParams";
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { updateFormValues, applyFilter } from '../../../store/slices/filterSlice';
-
-// Creating an enum for ProductCategory
-export enum ProductCategory {
-  ALL = "",
-  ART = "Art",
-  GAMING = "Gaming",
-  MUSIC = "Music",
-  REAL_ESTATE = "Real Estate"
-}
+import { ProductCategory } from '../../../enums/filter';
+import { stringToCategory } from '../../../utils/enumHelpers';
 
 const ProductCategoriesContainer = styled.div`
   margin-bottom: 24px;
 `;
-
-const optionsCategory = Object.values(ProductCategory).map((item) => ({
-  label: item === "" ? "All" : item,
-  value: item,
-}));
 
 export const TagCategories = () => {
   const dispatch = useDispatch();
@@ -33,8 +21,19 @@ export const TagCategories = () => {
 
   const valuesCateogry = formValues.categories || [];
 
+  // Create options with "All" and enum categories
+  const optionsCategory = [
+    { label: "All", value: ProductCategory.All },
+    ...Object.values(ProductCategory)
+      .filter(category => category !== ProductCategory.All)
+      .map(category => ({
+        label: category,
+        value: category
+      }))
+  ];
+
   const onChangeCategory = debounce((value: string) => {
-    if (value === "") {
+    if (value === ProductCategory.All) {
       // Cập nhật form values trong Redux
       dispatch(updateFormValues({ categories: [] }));
       // Áp dụng filter để cập nhật appliedFilters
@@ -67,7 +66,7 @@ export const TagCategories = () => {
               key={value}
               type={
                 valuesCateogry?.includes(value) ||
-                (valuesCateogry?.length === 0 && value === "")
+                (valuesCateogry?.length === 0 && value === ProductCategory.All)
                   ? "primary"
                   : "default"
               }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { Skeleton, Input, Flex, Typography, Button, Empty, Alert, Space, Grid } from 'antd';
+import { Skeleton, Input, Flex, Typography, Button, Empty, Alert, Space, Grid, Row, Col, Spin } from 'antd';
 import { SearchOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
 import { ProductCart } from '../product-cart';
 import { useBreakpoint } from '../../../hooks/useBreakpoint';
@@ -68,6 +68,51 @@ const FilterTag = styled.div`
 
 const RetryButton = styled(Button)`
   margin-top: 16px;
+`;
+
+const ProductsContainer = styled.div`
+  margin-top: 20px;
+`;
+
+const EmptyContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+`;
+
+const FilterSummary = styled.div`
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+`;
+
+const ClearFilters = styled.button`
+  background: none;
+  border: none;
+  color: #1890ff;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 14px;
+  margin-left: 8px;
+
+  &:hover {
+    color: #40a9ff;
+  }
+`;
+
+const LoadMoreButton = styled(Button)`
+  margin: 24px auto;
+  display: block;
+`;
+
+const TotalResults = styled.div`
+  margin-bottom: 16px;
+  color: #666;
 `;
 
 export const ProductList = () => {
@@ -153,8 +198,38 @@ export const ProductList = () => {
 
   // Load more products when clicking "Load More"
   const loadMore = () => {
+    console.log("Dispatching fetchMoreProducts");
     dispatch(fetchMoreProducts());
   };
+
+  const activeFilters = getActiveFilters();
+  const hasFilters = activeFilters.length > 0;
+
+  if (loading && !products.length) {
+    return (
+      <EmptyContainer>
+        <Spin size="large" />
+        <div style={{ marginTop: 16 }}>Loading products...</div>
+      </EmptyContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <EmptyContainer>
+        <Empty
+          description={
+            <div>
+              <div>Error loading products: {error}</div>
+              <RetryButton type="primary" onClick={handleRetry}>
+                Retry
+              </RetryButton>
+            </div>
+          }
+        />
+      </EmptyContainer>
+    );
+  }
 
   return (
     <StyledProductList>
@@ -210,27 +285,21 @@ export const ProductList = () => {
             }
           />
           
-          {getActiveFilters().length > 0 && (
+          {hasFilters && (
             <>
               <Typography.Text type="secondary" style={{ display: 'block', marginTop: '12px' }}>
                 No products match your current filters:
               </Typography.Text>
               
               <ActiveFiltersContainer>
-                {getActiveFilters().map((filter, index) => (
+                {activeFilters.map((filter, index) => (
                   <FilterTag key={index}>
                     {filter}
                   </FilterTag>
                 ))}
               </ActiveFiltersContainer>
               
-              <Button 
-                type="link" 
-                onClick={handleClearFilters}
-                style={{ marginTop: '16px' }}
-              >
-                Clear filters
-              </Button>
+              <ClearFilters onClick={handleClearFilters}>Clear filters</ClearFilters>
             </>
           )}
         </NoResultsContainer>
@@ -239,28 +308,38 @@ export const ProductList = () => {
       {/* Product grid */}
       {!loading && !error && products.length > 0 && (
         <>
-          <Flex justify="space-between" align="center">
-            <Typography.Title level={5} style={{ margin: 0 }}>
-              Showing {products.length} of {totalCount} products
-            </Typography.Title>
-          </Flex>
+          <ProductsContainer>
+            {hasFilters && (
+              <FilterSummary>
+                <div>Active filters: </div>
+                {activeFilters.map((filter, index) => (
+                  <FilterTag key={index}>{filter}</FilterTag>
+                ))}
+                <ClearFilters onClick={handleClearFilters}>Clear all</ClearFilters>
+              </FilterSummary>
+            )}
 
-          <ProductGrid $cols={getColumns()}>
-            {products.map((product: TProduct) => (
-              <ProductCart key={product.id} product={product} />
-            ))}
-          </ProductGrid>
+            <TotalResults>
+              Showing {products.length} of {totalCount} products
+            </TotalResults>
+
+            <ProductGrid $cols={getColumns()}>
+              {products.map((product: TProduct) => (
+                <ProductCart key={product.id} product={product} />
+              ))}
+            </ProductGrid>
+          </ProductsContainer>
 
           {hasMore && (
             <LoadMoreContainer>
-              <Button
-                onClick={loadMore}
+              <LoadMoreButton 
+                type="primary" 
                 loading={isFetchingNextPage}
+                onClick={loadMore}
                 disabled={isFetchingNextPage}
-                type="primary"
               >
-                {isFetchingNextPage ? 'Loading...' : 'Load More'}
-              </Button>
+                {isFetchingNextPage ? 'Loading more...' : 'Load More'}
+              </LoadMoreButton>
             </LoadMoreContainer>
           )}
         </>

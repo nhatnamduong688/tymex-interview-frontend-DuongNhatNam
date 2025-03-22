@@ -13,18 +13,35 @@ import { api } from '../../services/api';
 import { TFilterProduct } from '../../types/product';
 import { RootState } from '../index';
 
-// Helper to convert filter state to API parameters
+// Helper to convert filter state to API params for products API
 function convertFiltersToApiParams(filters: any) {
   const apiParams: Record<string, any> = {};
   
+  console.log('Converting filters to API params:', filters);
+  
+  // Search/keyword filter (sử dụng cả search và keyword)
   if (filters.search) {
     apiParams.search = filters.search;
+  } else if (filters.keyword) {
+    apiParams.search = filters.keyword;
   }
   
-  if (filters.priceRange) {
-    apiParams.priceRange = filters.priceRange;
+  // Handle price filtering
+  // Ưu tiên sử dụng minPrice/maxPrice trực tiếp
+  if (filters.minPrice !== undefined) {
+    apiParams.minPrice = filters.minPrice;
   }
   
+  if (filters.maxPrice !== undefined) {
+    apiParams.maxPrice = filters.maxPrice;
+  }
+  // Nếu không có minPrice/maxPrice, sử dụng priceRange nếu có
+  else if (filters.priceRange && Array.isArray(filters.priceRange) && filters.priceRange.length === 2) {
+    apiParams.minPrice = filters.priceRange[0];
+    apiParams.maxPrice = filters.priceRange[1];
+  }
+  
+  // Product attributes
   if (filters.tier) {
     apiParams.tier = filters.tier;
   }
@@ -33,8 +50,27 @@ function convertFiltersToApiParams(filters: any) {
     apiParams.theme = filters.theme;
   }
   
+  // Categories
   if (filters.categories && filters.categories.length > 0) {
     apiParams.categories = filters.categories;
+  }
+  
+  // Sorting
+  if (filters.sortTime) {
+    apiParams.sortTime = filters.sortTime;
+  }
+  
+  if (filters.sortPrice) {
+    apiParams.sortPrice = filters.sortPrice;
+  }
+  
+  // Pagination
+  if (filters._page) {
+    apiParams._page = filters._page;
+  }
+  
+  if (filters._limit) {
+    apiParams._limit = filters._limit;
   }
   
   console.log('Filter params created:', apiParams);
@@ -45,6 +81,8 @@ function convertFiltersToApiParams(filters: any) {
 function updateUrlParams(filters: any) {
   const url = new URL(window.location.href);
   
+  console.log('Updating URL params with filters:', filters);
+  
   // Clear existing params
   Array.from(url.searchParams.keys()).forEach(key => {
     url.searchParams.delete(key);
@@ -54,19 +92,37 @@ function updateUrlParams(filters: any) {
   Object.entries(filters).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       if (Array.isArray(value)) {
-        // Handle arrays like priceRange and categories
+        // Handle arrays - priceRange và categories
         if (key === 'priceRange' && value.length === 2) {
+          // Đối với priceRange, chuyển thành minPrice và maxPrice cho URL
           url.searchParams.set('minPrice', String(value[0]));
           url.searchParams.set('maxPrice', String(value[1]));
-        } else if (value.length > 0) {
-          // For other arrays like categories
+          console.log('Added price range to URL:', value[0], value[1]);
+        } else if (key === 'categories' && value.length > 0) {
+          // Đối với categories, thêm từng giá trị riêng biệt
           value.forEach((item: string) => {
             url.searchParams.append(key, item);
           });
+          console.log('Added categories to URL:', value);
+        } else if (value.length > 0) {
+          // Đối với các array khác, nối bằng dấu phẩy
+          url.searchParams.set(key, value.join(','));
+          console.log('Added array param to URL:', key, value.join(','));
         }
       } else {
+        // Đối với các giá trị thông thường
         url.searchParams.set(key, String(value));
+        console.log('Added param to URL:', key, value);
       }
+    }
+  });
+  
+  // Đảm bảo không thêm các params không cần thiết
+  const paramsToExclude = ['priceRange', 'isFilterVisible', '_page', '_limit'];
+  paramsToExclude.forEach(param => {
+    if (url.searchParams.has(param)) {
+      url.searchParams.delete(param);
+      console.log('Removed unnecessary param from URL:', param);
     }
   });
   

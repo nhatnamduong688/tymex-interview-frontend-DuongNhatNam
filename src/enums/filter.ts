@@ -8,21 +8,20 @@ export enum ProductCategory {
   Legendary = "Legendary",
   Mythic = "Mythic",
   Epic = "Epic",
-  Rare = "Rare",
-  Art = "Art",
-  RealEstate = "Real Estate",
-  Gaming = "Gaming",
-  Music = "Music"
+  Rare = "Rare"
 }
 
 export enum ProductTheme {
   Light = "Light",
-  Dark = "Dark"
+  Dark = "Dark",
+  Colorful = "Colorful",
+  Halloween = "Halloween"
 }
 
 export enum ProductTier {
   Basic = "Basic",
-  Premium = "Premium"
+  Premium = "Premium",
+  Deluxe = "Deluxe"
 }
 
 export enum SortType {

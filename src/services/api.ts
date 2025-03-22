@@ -1,6 +1,8 @@
 import axios, { AxiosResponse } from 'axios';
 import { TProduct, TFilterProduct } from '../types/product';
 import { SortType } from '../enums/filter';
+import { enumToString, stringToTier, stringToTheme } from '../utils/enumHelpers';
+import { ProductTier, ProductTheme } from '../enums/filter';
 
 // API base URL
 const API_BASE_URL = 'https://tymex-mock-server-blr0.onrender.com';
@@ -86,77 +88,75 @@ const convertFiltersToQueryParams = (
   queryParams._page = String(page);
   queryParams._limit = String(pageSize);
   
-  // Add search/keyword filter
-  if (filters.search) {
+  // Add search/keyword filter - ưu tiên search, sau đó mới dùng keyword
+  if (filters?.search) {
     queryParams.title_like = filters.search;
-    console.log('Added search filter:', filters.search);
+    console.log('Added search filter from search field:', filters.search);
+  } else if (filters?.keyword) {
+    queryParams.title_like = filters.keyword;
+    console.log('Added search filter from keyword field:', filters.keyword);
   }
   
-  // Handle direct minPrice/maxPrice (from URL) or priceRange (from Redux)
-  if (filters.minPrice || filters.maxPrice) {
-    // Directly from URL parameters
-    console.log('Found minPrice/maxPrice directly in filters:');
-    console.log('minPrice:', filters.minPrice, typeof filters.minPrice);
-    console.log('maxPrice:', filters.maxPrice, typeof filters.maxPrice);
-    
-    if (filters.minPrice) {
-      queryParams.price_gte = String(filters.minPrice);
-      console.log('Added price_gte from minPrice:', queryParams.price_gte);
-    }
-    if (filters.maxPrice) {
-      queryParams.price_lte = String(filters.maxPrice);
-      console.log('Added price_lte from maxPrice:', queryParams.price_lte);
-    }
-    console.log('Using direct min/max price from URL params');
-  } else if (filters.priceRange && Array.isArray(filters.priceRange) && filters.priceRange.length === 2) {
-    // From Redux state's priceRange array
+  // Handle price filtering (ưu tiên minPrice/maxPrice)
+  if (filters?.minPrice !== undefined) {
+    queryParams.price_gte = String(filters.minPrice);
+    console.log('Added price_gte from minPrice:', queryParams.price_gte);
+  }
+  
+  if (filters?.maxPrice !== undefined) {
+    queryParams.price_lte = String(filters.maxPrice);
+    console.log('Added price_lte from maxPrice:', queryParams.price_lte);
+  }
+  // Nếu không có minPrice/maxPrice, kiểm tra priceRange
+  else if (filters?.priceRange && Array.isArray(filters.priceRange) && filters.priceRange.length === 2) {
     console.log('Using priceRange array:', filters.priceRange);
     queryParams.price_gte = String(filters.priceRange[0]);
     queryParams.price_lte = String(filters.priceRange[1]);
     console.log('Added price_gte/price_lte from priceRange:', queryParams.price_gte, queryParams.price_lte);
-  } else {
-    console.log('No price filters found');
   }
   
-  // Add tier filter
-  if (filters.tier) {
-    queryParams.tier = String(filters.tier);
-    console.log('Added tier filter:', filters.tier, typeof filters.tier);
+  // Add tier filter - using enum helper
+  if (filters?.tier) {
+    const tierValue = enumToString(filters.tier);
+    queryParams.tier = tierValue;
+    console.log('Added tier filter:', tierValue);
   }
   
-  // Add theme filter
-  if (filters.theme) {
-    queryParams.theme = String(filters.theme);
-    console.log('Added theme filter:', filters.theme, typeof filters.theme);
+  // Add theme filter - using enum helper
+  if (filters?.theme) {
+    const themeValue = enumToString(filters.theme);
+    queryParams.theme = themeValue;
+    console.log('Added theme filter:', themeValue);
   }
   
-  // Add sort by time
-  if (filters.sortTime) {
-    queryParams._sort = 'createdAt';
-    queryParams._order = filters.sortTime === SortType.Ascending ? 'asc' : 'desc';
-    console.log('Added time sort:', queryParams._order);
-  }
-  
-  // Add sort by price
-  if (filters.sortPrice) {
+  // Add sort parameters
+  // Using enum helpers for sort values
+  if (filters?.sortPrice) {
     queryParams._sort = 'price';
-    queryParams._order = filters.sortPrice === SortType.Ascending ? 'asc' : 'desc';
-    console.log('Added price sort:', queryParams._order);
+    queryParams._order = enumToString(filters.sortPrice);
+    console.log('Added price sort:', queryParams._sort, queryParams._order);
+  } else if (filters?.sortTime) {
+    queryParams._sort = 'createdAt';
+    queryParams._order = enumToString(filters.sortTime);
+    console.log('Added time sort:', queryParams._sort, queryParams._order);
   }
   
-  // Add categories filter (json-server needs multiple params for array values)
-  if (filters.categories && Array.isArray(filters.categories) && filters.categories.length > 0) {
+  // Add categories filter (json-server needs special handling for array values)
+  if (filters?.categories && Array.isArray(filters.categories) && filters.categories.length > 0) {
     console.log('Processing categories filter:', filters.categories);
-    // For json-server, we can use multiple category params or category_like
-    // Using category param for exact match
-    if (filters.categories.length === 1) {
-      queryParams.category = filters.categories[0];
+    
+    // Convert enum values to strings if needed
+    const categoryValues = filters.categories.map(cat => enumToString(cat));
+    
+    if (categoryValues.length === 1) {
+      // If single category, use exact match with category field in db.json
+      queryParams.category = categoryValues[0];
       console.log('Added single category filter:', queryParams.category);
     } else {
-      // Using a simple approach - this is not ideal for multiple categories
-      // but works for demonstration
-      queryParams.category_like = filters.categories.join('|'); // Using regex OR
-      console.log('Added multiple categories filter with OR:', queryParams.category_like);
+      // For multiple categories, we use OR logic with category_like
+      // json-server uses regex patterns for _like operators
+      queryParams.category_like = categoryValues.join('|');
+      console.log('Added multiple categories filter with OR pattern:', queryParams.category_like);
     }
   }
   
@@ -172,19 +172,37 @@ export const api = {
     const page = params?._page || 1;
     const limit = params?._limit || 12;
     
+    console.log('API CALL STARTED ===============================');
+    console.log('Original params:', JSON.stringify(params, null, 2));
+    
     // Transform to query parameters
     const queryParams = convertFiltersToQueryParams(params, page, limit);
     
-    console.log('API request params:', queryParams);
+    console.log('API request params:', JSON.stringify(queryParams, null, 2));
+    console.log('Request URL:', `${API_BASE_URL}/products`);
     
-    const response = await apiClient.get('/products', { 
-      params: queryParams 
-    });
-    
-    return {
-      data: response.data.map(transformProduct),
-      headers: response.headers
-    };
+    try {
+      const response = await apiClient.get('/products', { 
+        params: queryParams 
+      });
+      
+      console.log('API RESPONSE:');
+      console.log('Status:', response.status);
+      console.log('Headers:', response.headers);
+      console.log('Total products:', response.headers['x-total-count']);
+      console.log('Products returned:', response.data.length);
+      console.log('First product sample:', response.data[0] ? JSON.stringify(response.data[0], null, 2) : 'No products');
+      console.log('API CALL ENDED ===============================');
+      
+      return {
+        data: response.data.map(transformProduct),
+        headers: response.headers
+      };
+    } catch (error) {
+      console.error('API CALL ERROR:', error);
+      console.log('API CALL ENDED WITH ERROR ===============================');
+      throw error;
+    }
   },
   
   getProduct: async (id: string) => {

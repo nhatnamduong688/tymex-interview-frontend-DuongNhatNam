@@ -1,6 +1,7 @@
 import { PayloadAction, createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { TProduct } from '../../types/product';
 import { api } from '../../services/api';
+import { RootState } from '../index';
 
 export interface ProductsState {
   data: TProduct[];
@@ -27,14 +28,14 @@ const initialState: ProductsState = {
 export const fetchProducts = createAsyncThunk<
   { data: TProduct[]; totalCount: number },
   void,
-  { state: { filter: { appliedFilters: any } } }
+  { state: RootState }
 >(
   'products/fetchAll',
   async (_, { getState, rejectWithValue }) => {
     try {
       console.log('============= THUNK: fetchProducts =============');
       const state = getState();
-      const filters = state.filter.appliedFilters;
+      const filters = state.filter?.appliedFilters || {};
       
       console.log("fetchProducts thunk gọi với filters từ state:", 
                   JSON.stringify(filters, null, 2));
@@ -78,38 +79,81 @@ export const fetchProducts = createAsyncThunk<
       };
     } catch (error: any) {
       console.error("Error in fetchProducts thunk:", error);
-      return rejectWithValue(error.message || 'Failed to fetch products');
+      return rejectWithValue(error.toString());
     }
   }
 );
 
 export const fetchMoreProducts = createAsyncThunk<
-  { data: TProduct[]; totalCount: number; page: number },
+  { data: TProduct[]; totalCount: number },
   void,
-  { state: { products: ProductsState; filter: { appliedFilters: any } } }
+  { state: RootState }
 >(
   'products/fetchMore',
   async (_, { getState, rejectWithValue }) => {
-    const state = getState();
-    
-    const { page, limit } = state.products;
-    const nextPage = page + 1;
-    const filters = state.filter.appliedFilters;
-    
     try {
+      console.log('============= THUNK: fetchMoreProducts =============');
+      console.log('Time:', new Date().toISOString());
+      
+      const state = getState();
+      const productsState = state.products;
+      const filters = state.filter?.appliedFilters || {};
+      const nextPage = productsState.page + 1;
+      
+      console.log('fetchMoreProducts called with state:', { 
+        currentPage: productsState.page,
+        nextPage,
+        dataLength: productsState.data.length,
+        totalCount: productsState.totalCount,
+        hasMore: productsState.hasMore
+      });
+      
+      console.log('Applied filters:', JSON.stringify(filters, null, 2));
+
+      if (!productsState.hasMore) {
+        console.log('No more products to fetch (hasMore is false). Returning early.');
+        return { 
+          data: [], 
+          totalCount: productsState.totalCount 
+        };
+      }
+
+      console.log('Will fetch page:', nextPage);
+      console.log('API call parameters:', {
+        ...filters,
+        _page: nextPage,
+        _limit: productsState.limit
+      });
+      
+      // Make API call with explicit pagination parameters
       const response = await api.getProducts({
         ...filters,
         _page: nextPage,
-        _limit: limit
+        _limit: productsState.limit
       });
       
+      const newData = response.data;
+      const totalCount = parseInt(response.headers['x-total-count'] || '0');
+      
+      console.log('Fetched more products:', {
+        newDataLength: newData.length, 
+        responseTotal: totalCount,
+        currentPage: productsState.page,
+        nextPage
+      });
+      
+      // Check if we have more data after this fetch
+      const hasMoreProducts = (productsState.data.length + newData.length) < totalCount;
+      console.log('Has more products after this fetch:', hasMoreProducts);
+      console.log('============= END THUNK: fetchMoreProducts =============');
+
       return {
-        data: response.data,
-        totalCount: parseInt(response.headers['x-total-count'] || '0'),
-        page: nextPage
+        data: newData,
+        totalCount
       };
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to fetch more products');
+      console.error('Error in fetchMoreProducts:', error);
+      return rejectWithValue(error.toString());
     }
   }
 );
@@ -132,7 +176,16 @@ const productsSlice = createSlice({
         state.loading = false;
         state.data = action.payload.data;
         state.totalCount = action.payload.totalCount;
-        state.hasMore = state.data.length < action.payload.totalCount;
+        
+        // Calculate hasMore: still have more products if the number of loaded products is less than the total
+        const hasMoreProducts = state.data.length < action.payload.totalCount;
+        state.hasMore = hasMoreProducts;
+        
+        console.log('fetchProducts.fulfilled updated state:', {
+          dataLength: state.data.length,
+          totalCount: action.payload.totalCount,
+          hasMore: state.hasMore
+        });
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
@@ -144,12 +197,28 @@ const productsSlice = createSlice({
         state.isFetchingNextPage = true;
         state.error = null;
       })
-      .addCase(fetchMoreProducts.fulfilled, (state, action: PayloadAction<{ data: TProduct[], totalCount: number, page: number }>) => {
+      .addCase(fetchMoreProducts.fulfilled, (state, action: PayloadAction<{ data: TProduct[], totalCount: number }>) => {
         state.isFetchingNextPage = false;
-        state.data = [...state.data, ...action.payload.data];
+        
+        // Only append new data if there is any
+        if (action.payload.data.length > 0) {
+          state.data = [...state.data, ...action.payload.data];
+          state.page = state.page + 1;
+        }
+        
         state.totalCount = action.payload.totalCount;
-        state.page = action.payload.page;
-        state.hasMore = state.data.length < action.payload.totalCount;
+        
+        // Calculate hasMore: still have more products if the total loaded products is less than the total count
+        const hasMoreProducts = state.data.length < action.payload.totalCount;
+        state.hasMore = hasMoreProducts;
+        
+        console.log('fetchMoreProducts.fulfilled updated state:', {
+          dataLength: state.data.length,
+          newDataLength: action.payload.data.length,
+          totalCount: action.payload.totalCount,
+          currentPage: state.page,
+          hasMore: state.hasMore
+        });
       })
       .addCase(fetchMoreProducts.rejected, (state, action) => {
         state.isFetchingNextPage = false;

@@ -5,24 +5,46 @@ import { SortType } from '../../enums/filter';
 // Define the filter state interface
 export interface FilterState {
   formValues: {
+    // Search/filter fields
     search?: string;
+    keyword?: string;
+    
+    // Category filtering
     categories?: string[];
+    
+    // Product attributes filtering
     theme?: string;
     tier?: string;
+    
+    // Price filtering
     priceRange?: [number, number];
-    minPrice?: string;
-    maxPrice?: string;
-    keyword?: string;
+    minPrice?: number | string;
+    maxPrice?: number | string;
+    
+    // Sorting
+    sortTime?: string;
+    sortPrice?: string;
   };
   appliedFilters: {
+    // Search/filter fields
     search?: string;
+    keyword?: string;
+    
+    // Category filtering
     categories?: string[];
+    
+    // Product attributes filtering
     theme?: string;
     tier?: string;
+    
+    // Price filtering
     priceRange?: [number, number];
-    minPrice?: string;
-    maxPrice?: string;
-    keyword?: string;
+    minPrice?: number | string;
+    maxPrice?: number | string;
+    
+    // Sorting
+    sortTime?: string;
+    sortPrice?: string;
   };
   isFilterVisible: boolean;
 }
@@ -31,23 +53,27 @@ export interface FilterState {
 const initialState: FilterState = {
   formValues: {
     search: '',
+    keyword: '',
     categories: [],
     theme: '',
     tier: '',
     priceRange: [0, 200],
-    minPrice: '',
-    maxPrice: '',
-    keyword: '',
+    minPrice: 0,
+    maxPrice: 200,
+    sortTime: '',
+    sortPrice: '',
   },
   appliedFilters: {
     search: '',
+    keyword: '',
     categories: [],
     theme: '',
     tier: '',
     priceRange: [0, 200],
-    minPrice: '',
-    maxPrice: '',
-    keyword: '',
+    minPrice: 0,
+    maxPrice: 200,
+    sortTime: '',
+    sortPrice: '',
   },
   isFilterVisible: false,
 };
@@ -76,10 +102,23 @@ const filterSlice = createSlice({
       state.appliedFilters.search = action.payload;
     },
     
-    // Reset filter to initial state
+    // Reset all filters to default values
     resetFilter: (state) => {
-      state.formValues = initialState.formValues;
-      state.appliedFilters = initialState.appliedFilters;
+      console.log('============= FILTER SLICE: resetFilter =============');
+      
+      // Reset form values
+      state.formValues = {
+        ...initialState.formValues
+      };
+      
+      // Reset applied filters
+      state.appliedFilters = {
+        ...initialState.appliedFilters
+      };
+      
+      console.log('Reset filter state - formValues:', state.formValues);
+      console.log('Reset filter state - appliedFilters:', state.appliedFilters);
+      console.log('============= END FILTER SLICE =============');
     },
     
     // Toggle filter visibility
@@ -118,19 +157,52 @@ const filterSlice = createSlice({
         console.log('minPrice:', params.minPrice, typeof params.minPrice);
         console.log('maxPrice:', params.maxPrice, typeof params.maxPrice);
         
-        const minPrice = parseFloat(params.minPrice) || 0;
-        const maxPrice = parseFloat(params.maxPrice) || 200;
+        // Đảm bảo chuyển đổi đúng kiểu dữ liệu
+        const minPrice = params.minPrice !== undefined ? parseFloat(params.minPrice) : 0;
+        const maxPrice = params.maxPrice !== undefined ? parseFloat(params.maxPrice) : 200;
         
         console.log('Parsed values:', minPrice, maxPrice);
         
-        // Thêm priceRange cho UI nhưng giữ nguyên minPrice/maxPrice cho API
+        // Standardize: luôn tạo priceRange cho UI từ minPrice/maxPrice
         params.priceRange = [minPrice, maxPrice];
-        console.log('Created priceRange:', params.priceRange);
         
-        // KHÔNG xóa minPrice/maxPrice để API có thể sử dụng trực tiếp
-        console.log('Added priceRange while preserving minPrice/maxPrice for API:', params);
+        // Cập nhật lại minPrice/maxPrice (đảm bảo là số, không phải chuỗi)
+        params.minPrice = minPrice;
+        params.maxPrice = maxPrice;
+        
+        console.log('Created priceRange and updated min/max:', params);
+      } else if (params.priceRange) {
+        console.log('priceRange param detected:', params.priceRange);
+        
+        // Đảm bảo priceRange là array
+        let priceRange = params.priceRange;
+        if (!Array.isArray(priceRange)) {
+          try {
+            priceRange = JSON.parse(params.priceRange);
+          } catch (e) {
+            // Nếu không parse được, set giá trị mặc định
+            priceRange = [0, 200];
+          }
+        }
+        
+        // Đảm bảo priceRange đúng format và có 2 phần tử
+        if (!Array.isArray(priceRange) || priceRange.length !== 2) {
+          priceRange = [0, 200];
+        }
+        
+        params.priceRange = priceRange;
+        // Đồng bộ lại minPrice/maxPrice
+        params.minPrice = priceRange[0];
+        params.maxPrice = priceRange[1];
+        
+        console.log('Standardized priceRange and created min/max:', params);
       } else {
-        console.log('No price range params found in URL');
+        console.log('No price range params found in URL, using defaults');
+        
+        // Set default values nếu không có params
+        params.priceRange = [0, 200];
+        params.minPrice = 0;
+        params.maxPrice = 200;
       }
       
       // Ensure categories is always an array
@@ -145,28 +217,36 @@ const filterSlice = createSlice({
         }
       } else {
         console.log('No categories found in URL params');
+        params.categories = [];
       }
       
-      // Check tier and theme params
+      // Check and standardize tier and theme params
       if (params.tier) {
         console.log('Tier from URL:', params.tier, typeof params.tier);
+        // Ensure tier is a string
+        params.tier = String(params.tier);
       }
       
       if (params.theme) {
         console.log('Theme from URL:', params.theme, typeof params.theme);
+        // Ensure theme is a string
+        params.theme = String(params.theme);
+      }
+      
+      // Handling sortTime and sortPrice
+      if (params.sortTime) {
+        console.log('sortTime from URL:', params.sortTime);
+        // Ensure it's a valid sort value
+        params.sortTime = SortType[params.sortTime as keyof typeof SortType] || SortType.Ascending;
+      }
+      
+      if (params.sortPrice) {
+        console.log('sortPrice from URL:', params.sortPrice);
+        // Ensure it's a valid sort value
+        params.sortPrice = SortType[params.sortPrice as keyof typeof SortType] || SortType.Ascending;
       }
       
       console.log('Final params before updating state:', params);
-      
-      // Đảm bảo priceRange là array
-      if (params.priceRange && !Array.isArray(params.priceRange)) {
-        try {
-          params.priceRange = JSON.parse(params.priceRange);
-        } catch (e) {
-          // Nếu không parse được, set giá trị mặc định
-          params.priceRange = [0, 200];
-        }
-      }
       
       // Update both formValues and appliedFilters
       state.formValues = {

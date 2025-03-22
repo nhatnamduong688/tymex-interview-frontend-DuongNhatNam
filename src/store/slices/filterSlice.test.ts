@@ -11,23 +11,47 @@ import filterReducer, {
 } from './filterSlice';
 import { SortType } from '../../enums/filter';
 
-// Create correct initialState matching the actual implementation
+// Mock initialState to match the actual initialState in filterSlice
 const initialState: FilterState = {
   formValues: {
     search: '',
+    keyword: '',
     categories: [],
     theme: '',
     tier: '',
     priceRange: [0, 200],
+    minPrice: 0,
+    maxPrice: 200,
+    sortTime: '',
+    sortPrice: ''
   },
   appliedFilters: {
     search: '',
+    keyword: '',
     categories: [],
     theme: '',
     tier: '',
     priceRange: [0, 200],
+    minPrice: 0,
+    maxPrice: 200,
+    sortTime: '',
+    sortPrice: ''
   },
-  isFilterVisible: false,
+  isFilterVisible: false
+};
+
+// Mock form values for testing
+const mockFormValues = {
+  search: 'digital',
+  keyword: '',
+  categories: ['Art'],
+  theme: 'Dark',
+  tier: 'Premium',
+  priceRange: [50, 150],
+  minPrice: 0,
+  maxPrice: 200,
+  sortTime: '',
+  sortPrice: ''
 };
 
 describe('Filter Slice', () => {
@@ -40,7 +64,7 @@ describe('Filter Slice', () => {
 
   describe('updateFormValues', () => {
     it('should update form values', () => {
-      const mockFormValues = {
+      const mockPartialFormValues = {
         search: 'digital',
         categories: ['Art'],
         theme: 'Dark',
@@ -48,9 +72,14 @@ describe('Filter Slice', () => {
         priceRange: [50, 150],
       };
 
-      const state = filterReducer(initialState, updateFormValues(mockFormValues));
+      const state = filterReducer(initialState, updateFormValues(mockPartialFormValues));
       
-      expect(state.formValues).toEqual(mockFormValues);
+      // Chỉ kiểm tra các giá trị đã cập nhật
+      expect(state.formValues.search).toEqual(mockPartialFormValues.search);
+      expect(state.formValues.categories).toEqual(mockPartialFormValues.categories);
+      expect(state.formValues.theme).toEqual(mockPartialFormValues.theme);
+      expect(state.formValues.tier).toEqual(mockPartialFormValues.tier);
+      expect(state.formValues.priceRange).toEqual(mockPartialFormValues.priceRange);
     });
 
     it('should handle partial updates', () => {
@@ -79,7 +108,7 @@ describe('Filter Slice', () => {
 
   describe('applyFilter', () => {
     it('should apply filter from form values', () => {
-      const mockFormValues = {
+      const mockPartialFormValues = {
         search: 'digital',
         categories: ['Art'],
         theme: 'Dark',
@@ -87,10 +116,15 @@ describe('Filter Slice', () => {
         priceRange: [50, 150],
       };
 
-      let state = filterReducer(initialState, updateFormValues(mockFormValues));
+      let state = filterReducer(initialState, updateFormValues(mockPartialFormValues));
       state = filterReducer(state, applyFilter());
       
-      expect(state.appliedFilters).toEqual(mockFormValues);
+      // Chỉ kiểm tra các giá trị đã áp dụng
+      expect(state.appliedFilters.search).toEqual(mockPartialFormValues.search);
+      expect(state.appliedFilters.categories).toEqual(mockPartialFormValues.categories);
+      expect(state.appliedFilters.theme).toEqual(mockPartialFormValues.theme);
+      expect(state.appliedFilters.tier).toEqual(mockPartialFormValues.tier);
+      expect(state.appliedFilters.priceRange).toEqual(mockPartialFormValues.priceRange);
     });
 
     it('should update searchText when search is applied', () => {
@@ -279,19 +313,17 @@ describe('Filter Slice', () => {
     });
     
     it('should handle minPrice/maxPrice without priceRange', () => {
-      const urlParams = {
+      const state = filterReducer(initialState, setFiltersFromUrl({
         minPrice: '25',
         maxPrice: '175'
-      };
-
-      const state = filterReducer(initialState, setFiltersFromUrl(urlParams));
+      }));
       
       expect(state.formValues.priceRange).toEqual([25, 175]);
-      expect(state.formValues.minPrice).toBe('25');
-      expect(state.formValues.maxPrice).toBe('175');
+      expect(state.formValues.minPrice).toBe(25);
+      expect(state.formValues.maxPrice).toBe(175);
       expect(state.appliedFilters.priceRange).toEqual([25, 175]);
-      expect(state.appliedFilters.minPrice).toBe('25');
-      expect(state.appliedFilters.maxPrice).toBe('175');
+      expect(state.appliedFilters.minPrice).toBe(25);
+      expect(state.appliedFilters.maxPrice).toBe(175);
     });
     
     it('should handle only minPrice without maxPrice', () => {
