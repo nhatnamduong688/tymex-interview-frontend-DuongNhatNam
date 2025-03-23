@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import styled from "styled-components";
 import { TProduct } from '../../types/product';
 
@@ -7,20 +7,24 @@ interface ProductCartProps {
 }
 
 const CardContainer = styled.div`
-  background: #262c3a;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.16);
-  backdrop-filter: blur(20px);
-  border-radius: 12px;
+  position: relative;
   overflow: hidden;
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: rgba(20, 25, 50, 0.7);
+  will-change: transform, opacity;
+  contain: content;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba(60, 80, 150, 0.2);
   width: 100%;
   height: 365px;
-  position: relative;
-  transition: transform 0.2s ease-in-out;
-  will-change: transform;
-  contain: content;
+  transform: translateZ(0);
+  backface-visibility: hidden;
   
   &:hover {
-    transform: translateY(-8px);
+    transform: translateY(-5px) translateZ(0);
+    box-shadow: 0 12px 30px rgba(0, 20, 80, 0.5);
   }
 `;
 
@@ -29,6 +33,7 @@ const CardBackground = styled.div`
   height: 200px;
   background: #1f2432;
   overflow: hidden;
+  will-change: contents;
 `;
 
 const BackgroundImage = styled.img`
@@ -36,6 +41,8 @@ const BackgroundImage = styled.img`
   height: 100%;
   object-fit: cover;
   background-color: #1f2432;
+  will-change: transform;
+  transform: translateZ(0);
 `;
 
 const ItemImage = styled.img`
@@ -128,7 +135,8 @@ const Tag = styled.span`
   font-weight: 500;
 `;
 
-export const ProductCart: React.FC<ProductCartProps> = ({ product }) => {
+// Using React.memo to prevent unnecessary re-renders of product cards
+export const ProductCart = memo<ProductCartProps>(({ product }) => {
   // Kiểm tra null/undefined cho product
   if (!product) {
     return <div>Loading product...</div>;
@@ -137,8 +145,18 @@ export const ProductCart: React.FC<ProductCartProps> = ({ product }) => {
   return (
     <CardContainer>
       <CardBackground>
-        <BackgroundImage src={product.imageBg} alt={product.name} />
-        <ItemImage src={product.imageItem} alt={product.name} />
+        <BackgroundImage 
+          src={product.imageBg} 
+          alt={product.name}
+          loading="lazy" 
+          decoding="async"
+        />
+        <ItemImage 
+          src={product.imageItem} 
+          alt={product.name}
+          loading="lazy"
+          decoding="async" 
+        />
       </CardBackground>
       
       {product.tags && product.tags.length > 0 && (
@@ -156,7 +174,11 @@ export const ProductCart: React.FC<ProductCartProps> = ({ product }) => {
         </PriceContainer>
         <CreatorContainer>
           <AvatarContainer>
-            <Avatar src={product.creator.avatar} alt={product.creator.name} />
+            <Avatar 
+              src={product.creator.avatar} 
+              alt={product.creator.name}
+              loading="lazy" 
+            />
             {product.creator.isOnline && <OnlineIndicator />}
           </AvatarContainer>
           <CreatorName>{product.creator.name}</CreatorName>
@@ -164,4 +186,4 @@ export const ProductCart: React.FC<ProductCartProps> = ({ product }) => {
       </CardContent>
     </CardContainer>
   );
-}; 
+}); 

@@ -12,15 +12,17 @@ const { Content, Sider } = Layout;
 const StyledLayout = styled.div`
     min-height: 100vh;
     width: 100%;
-    background-color: #242424;
-    background-image: linear-gradient(to bottom, #242424, #1a1a1a);
+    background-color: #0c0d1a;
+    background-image: url('/assets/images/custom/space-background.jpg');
     background-position: center;
     background-size: cover;
     background-attachment: fixed;
-    will-change: transform;
-    contain: paint;
+    will-change: transform, background, background-image;
+    contain: paint layout;
     contain-intrinsic-size: 100vh;
     position: relative;
+    transform: translateZ(0);
+    backface-visibility: hidden;
     
     &::before {
         content: "";
@@ -29,7 +31,7 @@ const StyledLayout = styled.div`
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: #242424;
+        background-color: rgba(10, 11, 35, 0.5);
         z-index: -1;
     }
     
@@ -41,6 +43,8 @@ const StyledLayout = styled.div`
 const StyledContent = styled(Content)`
     background: transparent;
     padding-top: var(--header-height);
+    position: relative;
+    z-index: 1;
 `;
 
 export const MainLayout = () => {
