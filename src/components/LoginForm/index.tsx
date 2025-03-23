@@ -1,27 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Form, Input, Button, Alert } from 'antd';
-import styled from 'styled-components';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { loginRequest } from '../../store/reducers/authReducer';
-
-const LoginContainer = styled.div`
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  border-radius: 8px;
-  background: ${props => props.theme.colors.primaryGradient};
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-`;
-
-const StyledForm = styled(Form)`
-  .ant-form-item-label > label {
-    color: white;
-  }
-`;
-
-const LoginButton = styled(Button)`
-  width: 100%;
-`;
+import {
+  LoginContainer,
+  StyledForm,
+  LoginButton,
+  LoginTitle,
+  WelcomeContainer
+} from './styles';
 
 interface LoginFormValues {
   email: string;
@@ -38,47 +25,42 @@ export const LoginForm: React.FC = () => {
 
   return (
     <LoginContainer>
-      <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '24px' }}>Login</h2>
+      <LoginTitle>Login</LoginTitle>
       
       {error && <Alert message={error} type="error" style={{ marginBottom: '16px' }} />}
       
       {isAuthenticated ? (
-        <div style={{ textAlign: 'center', color: 'white' }}>
+        <WelcomeContainer>
           <h3>Welcome, {user?.name}!</h3>
           <p>You are successfully logged in.</p>
-        </div>
+        </WelcomeContainer>
       ) : (
         <StyledForm
           name="login"
-          layout="vertical"
+          initialValues={{ remember: true }}
           onFinish={onFinish}
-          autoComplete="off"
         >
           <Form.Item
-            label={<span style={{ color: 'white' }}>Email</span>}
+            label="Email"
             name="email"
             rules={[{ required: true, message: 'Please input your email!' }]}
           >
-            <Input placeholder="user@example.com" />
+            <Input />
           </Form.Item>
 
           <Form.Item
-            label={<span style={{ color: 'white' }}>Password</span>}
+            label="Password"
             name="password"
             rules={[{ required: true, message: 'Please input your password!' }]}
           >
-            <Input.Password placeholder="password" />
+            <Input.Password />
           </Form.Item>
 
           <Form.Item>
             <LoginButton type="primary" htmlType="submit" loading={loading}>
-              Login
+              Log in
             </LoginButton>
           </Form.Item>
-          
-          <div style={{ color: 'white', textAlign: 'center', fontSize: '12px' }}>
-            Demo credentials: user@example.com / password
-          </div>
         </StyledForm>
       )}
     </LoginContainer>

@@ -1,244 +1,69 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
 import * as productApi from '../../services/product';
 import { TProduct } from '../../types/product';
-
-type ApiStatusType = 'connected' | 'disconnected' | 'checking' | 'retrying' | 'connecting';
-
-// Styled components
-const DebugContainer = styled.div<{ isVisible: boolean }>`
-  position: fixed;
-  bottom: ${props => props.isVisible ? '0' : '-400px'};
-  right: 20px;
-  width: 350px;
-  background-color: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  border-radius: 8px 8px 0 0;
-  padding: 12px;
-  z-index: 9999;
-  transition: bottom 0.3s ease-in-out;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-  font-family: monospace;
-  font-size: 12px;
-`;
-
-const DebugHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-`;
-
-const Title = styled.h3`
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-`;
-
-const StatusBadge = styled.span<{ status: ApiStatusType }>`
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 6px;
-  background-color: ${props => {
-    switch (props.status) {
-      case 'connected': return '#4caf50';
-      case 'disconnected': return '#f44336';
-      case 'retrying': return '#ff9800';
-      case 'checking': return '#2196f3';
-      case 'connecting': return '#2196f3';
-      default: return '#2196f3';
-    }
-  }};
-`;
-
-const ToggleButton = styled.button`
-  position: fixed;
-  bottom: 0;
-  right: 20px;
-  background-color: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  border: none;
-  border-radius: 8px 8px 0 0;
-  padding: 5px 10px;
-  cursor: pointer;
-  z-index: 9998;
-  font-family: monospace;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-`;
-
-const DebugButton = styled.button`
-  background-color: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 8px;
-  cursor: pointer;
-  margin-left: 8px;
-  font-size: 11px;
-  font-family: monospace;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-  }
-`;
-
-const ErrorButton = styled(DebugButton)`
-  background-color: rgba(255, 59, 48, 0.3);
-  
-  &:hover {
-    background-color: rgba(255, 59, 48, 0.5);
-  }
-`;
-
-const DebugContent = styled.div`
-  max-height: 350px;
-  overflow-y: auto;
-  word-break: break-all;
-`;
-
-const DebugSection = styled.div`
-  margin-bottom: 10px;
-`;
-
-const SectionTitle = styled.div`
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #8bc34a;
-`;
-
-const ApiInfo = styled.div`
-  padding: 6px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  margin-bottom: 8px;
-`;
-
-const SampleData = styled.pre`
-  background-color: rgba(255, 255, 255, 0.1);
-  padding: 6px;
-  border-radius: 4px;
-  overflow-x: auto;
-  max-height: 150px;
-  font-size: 11px;
-  margin: 0;
-`;
-
-const ErrorMessage = styled.div`
-  color: #ff5252;
-  background-color: rgba(255, 0, 0, 0.1);
-  padding: 6px;
-  border-radius: 4px;
-  margin-top: 8px;
-`;
-
-const RetryInfo = styled.div`
-  color: #ff9800;
-  background-color: rgba(255, 152, 0, 0.1);
-  padding: 6px;
-  border-radius: 4px;
-  margin-top: 8px;
-`;
-
-const ButtonsContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-`;
+import {
+  ApiStatusType,
+  DebugContainer,
+  DebugHeader,
+  Title,
+  StatusBadge,
+  ToggleButton,
+  DebugButton,
+  ErrorButton,
+  DebugContent,
+  DebugSection,
+  SectionTitle,
+  ApiInfo,
+  SampleData,
+  ErrorMessage,
+  RetryInfo,
+  MockSwitch,
+  SwitchLabel,
+  ToggleSwitch,
+  ButtonsContainer
+} from './styles';
 
 export const ApiDebugger: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [apiStatus, setApiStatus] = useState<ApiStatusType>('checking');
-  const [sampleProduct, setSampleProduct] = useState<TProduct | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [apiUrl, setApiUrl] = useState<string>('');
-  const [retryAttempt, setRetryAttempt] = useState<number>(0);
-  const [maxRetries, setMaxRetries] = useState<number>(3);
-  const [mockErrorMode, setMockErrorMode] = useState<boolean>(false);
-  const [products, setProducts] = useState<TProduct[]>([]);
-  
-  const retryTimeoutRef = useRef<number | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [sampleData, setSampleData] = useState<TProduct[] | null>(null);
+  const [useMockData, setUseMockData] = useState(false);
 
-  const checkApiConnection = async (forceError = false) => {
-    try {
-      // Set loading
-      setApiStatus('connecting');
-      setError(null);
-      setProducts([]);
-      
-      if (forceError) {
-        throw new Error('Mock API error for testing');
-      }
-      
-      // Try to get first product as sample
-      const response = await productApi.getProducts({}, 1, 1);
-      
-      setApiStatus('connected');
-      if (response.data && response.data.length > 0) {
-        setProducts(response.data);
-      }
-    } catch (err) {
-      handleApiError(err);
-    }
-  };
-
-  const handleApiError = (err: unknown, currentRetry = 0) => {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-    console.error('API Connection Error:', err);
-    
-    if (currentRetry < maxRetries) {
-      setApiStatus('retrying');
-      setRetryAttempt(currentRetry + 1);
-      
-      // Clear any existing retry timeout
-      if (retryTimeoutRef.current) {
-        window.clearTimeout(retryTimeoutRef.current);
-      }
-      
-      // Exponential backoff: 1s, 2s, 4s, etc.
-      const retryDelay = Math.min(1000 * Math.pow(2, currentRetry), 10000);
-      setError(`Connection failed: ${errorMessage}. Retrying in ${retryDelay/1000}s (${currentRetry + 1}/${maxRetries})...`);
-      
-      retryTimeoutRef.current = window.setTimeout(() => {
-        if (mockErrorMode) {
-          handleApiError(new Error('Forced error during retry'), currentRetry + 1);
-        } else {
-          checkApiConnection();
-        }
-      }, retryDelay);
-    } else {
-      setApiStatus('disconnected');
-      setError(`Failed to connect: ${errorMessage}. Max retries (${maxRetries}) reached.`);
-    }
-  };
-
-  const toggleMockErrorMode = () => {
-    setMockErrorMode(!mockErrorMode);
-    if (!mockErrorMode) {
-      checkApiConnection(true);
-    } else {
-      // When turning off mock error mode, check connection normally
-      checkApiConnection(false);
-    }
-  };
-
+  // Để test API khi component mount
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      checkApiConnection();
-    }
-    
-    return () => {
-      if (retryTimeoutRef.current) {
-        window.clearTimeout(retryTimeoutRef.current);
-      }
-    };
+    checkApiStatus();
   }, []);
+
+  // Check API status
+  const checkApiStatus = async () => {
+    setApiStatus('checking');
+    setErrorMessage(null);
+    
+    try {
+      const data = await productApi.getProducts({ useMockData });
+      setSampleData(data.slice(0, 3));
+      setApiStatus('connected');
+      setRetryCount(0);
+    } catch (error) {
+      setApiStatus('disconnected');
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage('Unknown error');
+      }
+      
+      // Retry logic
+      if (retryCount < 3) {
+        setApiStatus('retrying');
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          checkApiStatus();
+        }, 2000);
+      }
+    }
+  };
 
   // Only render in development mode
   if (process.env.NODE_ENV !== 'development') {
@@ -254,7 +79,7 @@ export const ApiDebugger: React.FC = () => {
           : apiStatus === 'disconnected' 
             ? 'Disconnected' 
             : apiStatus === 'retrying'
-              ? `Retrying (${retryAttempt}/${maxRetries})`
+              ? `Retrying (${retryCount}/3)`
               : 'Checking...'}
       </ToggleButton>
       
@@ -265,7 +90,7 @@ export const ApiDebugger: React.FC = () => {
             API Debugger
           </Title>
           <div>
-            <DebugButton onClick={() => checkApiConnection()}>
+            <DebugButton onClick={() => checkApiStatus()}>
               Refresh
             </DebugButton>
             <DebugButton onClick={() => setIsVisible(false)}>
@@ -283,19 +108,18 @@ export const ApiDebugger: React.FC = () => {
                 : apiStatus === 'disconnected' 
                   ? '❌ Disconnected' 
                   : apiStatus === 'retrying'
-                    ? `🔄 Retrying (${retryAttempt}/${maxRetries})`
+                    ? `🔄 Retrying (${retryCount}/3)`
                     : '🔍 Checking...'}
               <br />
-              URL: {apiUrl}
-              {mockErrorMode && <div style={{ color: '#ff9800', marginTop: '4px' }}>⚠️ Mock Error Mode Active</div>}
+              Mock Data: {useMockData ? 'Enabled' : 'Disabled'}
             </ApiInfo>
           </DebugSection>
           
-          {sampleProduct && (
+          {sampleData && (
             <DebugSection>
-              <SectionTitle>Sample Product:</SectionTitle>
+              <SectionTitle>Sample Data:</SectionTitle>
               <SampleData>
-                {JSON.stringify(sampleProduct, null, 2)}
+                {JSON.stringify(sampleData, null, 2)}
               </SampleData>
             </DebugSection>
           )}
@@ -303,39 +127,33 @@ export const ApiDebugger: React.FC = () => {
           <DebugSection>
             <SectionTitle>Auto-Refresh:</SectionTitle>
             <ApiInfo>
-              ⏱️ Products will refresh every 60 seconds if enabled
+              ⏱️ Data will refresh every 2 seconds if enabled
             </ApiInfo>
           </DebugSection>
           
           <DebugSection>
             <SectionTitle>Retry Configuration:</SectionTitle>
             <ApiInfo>
-              Max Retries: {maxRetries}
+              Max Retries: 3
               <br />
-              Retry Strategy: Exponential backoff (1s, 2s, 4s...)
+              Retry Strategy: Fixed delay (2s)
               <br />
-              Current Attempt: {retryAttempt > 0 ? retryAttempt : 'None'}
+              Current Attempt: {retryCount > 0 ? retryCount : 'None'}
             </ApiInfo>
           </DebugSection>
           
-          {error && (
+          {errorMessage && (
             <ErrorMessage>
-              {error}
+              {errorMessage}
             </ErrorMessage>
           )}
           
-          {apiStatus === 'retrying' && (
-            <RetryInfo>
-              Automatically retrying connection...
-            </RetryInfo>
-          )}
-          
           <ButtonsContainer>
-            <DebugButton onClick={() => checkApiConnection()}>
+            <DebugButton onClick={() => checkApiStatus()}>
               Test Connection
             </DebugButton>
-            <ErrorButton onClick={toggleMockErrorMode}>
-              {mockErrorMode ? 'Disable Error Mode' : 'Force Error'}
+            <ErrorButton onClick={() => setUseMockData(!useMockData)}>
+              {useMockData ? 'Disable Mock Data' : 'Use Mock Data'}
             </ErrorButton>
           </ButtonsContainer>
         </DebugContent>

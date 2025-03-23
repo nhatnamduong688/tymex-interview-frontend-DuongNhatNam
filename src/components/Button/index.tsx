@@ -1,26 +1,6 @@
 import React from 'react';
-import { Button as AntButton } from 'antd';
 import type { ButtonProps } from 'antd/es/button';
-import styled from 'styled-components';
-
-const StyledButton = styled(AntButton)`
-  &.ant-btn-primary {
-    background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
-    border: none;
-    
-    &:hover,
-    &:focus {
-      background: linear-gradient(90deg, #00d2ff 20%, #3a7bd5 100%);
-    }
-  }
-  
-  &.ant-btn-large {
-    height: 48px;
-    padding: 0 24px;
-    font-size: 16px;
-    border-radius: 8px;
-  }
-`;
+import { StyledButton } from './styles';
 
 export const Button: React.FC<ButtonProps> = (props) => {
   return <StyledButton {...props} />;
