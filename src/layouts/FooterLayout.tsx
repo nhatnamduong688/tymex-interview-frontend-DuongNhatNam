@@ -5,7 +5,26 @@ const FooterContainer = styled.footer`
   width: 100%;
   padding: 30px 0;
   background-color: #0c1023;
-  color: white;
+  //color: white;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  
+  &::before {
+    content: "";
+    position: absolute;
+    top: -200px;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(to bottom, transparent, #0c1023);
+    z-index: -1;
+    pointer-events: none;
+    will-change: opacity;
+  }
 `;
 
 const FooterContent = styled.div`
@@ -27,6 +46,7 @@ const FooterTitle = styled.h3`
   font-size: 18px;
   margin-bottom: 20px;
   font-weight: bold;
+  //color: white;
 `;
 
 const FooterLink = styled.a`

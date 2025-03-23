@@ -44,7 +44,7 @@ const LoadMoreContainer = styled.div`
 
 const NoResultsContainer = styled.div`
   padding: 24px;
-  background-color: #f9f9f9;
+  //background-color: #f9f9f9;
   border-radius: 8px;
   text-align: center;
 `;
@@ -58,7 +58,7 @@ const ActiveFiltersContainer = styled.div`
 `;
 
 const FilterTag = styled.div`
-  background-color: #f0f0f0;
+  //background-color: #f0f0f0;
   padding: 4px 12px;
   border-radius: 16px;
   font-size: 14px;

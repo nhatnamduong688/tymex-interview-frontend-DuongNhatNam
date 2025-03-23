@@ -1,5 +1,5 @@
 // src/layouts/MainLayout.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Layout } from 'antd';
 import { HeaderLayout } from './HeaderLayout';
@@ -47,9 +47,30 @@ const StyledContent = styled(Content)`
     z-index: 1;
 `;
 
+// Thêm một layer background tạm thời khi scroll 
+const BackgroundPreloader = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #0c0d1a;
+    z-index: -2;
+    pointer-events: none;
+`;
+
 export const MainLayout = () => {
+    // Preload background image khi component mount
+    useEffect(() => {
+        const preloadImage = new Image();
+        preloadImage.src = '/assets/images/custom/space-background.jpg';
+    }, []);
+
     return (
         <StyledLayout className="main-layout min-h-screen w-full">
+            {/* Layer background màu tối để tránh flash màu trắng */}
+            <BackgroundPreloader />
+            
             <HeaderLayout />
             
             <StyledContent className="bg-transparent">

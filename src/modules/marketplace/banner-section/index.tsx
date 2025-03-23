@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 const BannerContainer = styled.section`
   background: linear-gradient(135deg, #1a6aff 0%, #7e42ff 100%);
-  color: white;
+  //color: white;
   padding: 80px 40px;
   text-align: center;
 `;

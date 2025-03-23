@@ -3,7 +3,7 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color: rgba(255, 255, 255, 0.87);
+  /*color: rgba(255, 255, 255, 0.87);*/
   background-color: #242424;
 
   font-synthesis: none;
@@ -27,7 +27,7 @@ html, body {
 }
 
 body {
-  color: #efefef;
+  /*color: #efefef;*/
   background-color: #242424;
   /* Thêm một gradient background đơn giản để hiển thị ngay lập tức khi cuộn */
   background-image: linear-gradient(to bottom, #242424, #1a1a1a);

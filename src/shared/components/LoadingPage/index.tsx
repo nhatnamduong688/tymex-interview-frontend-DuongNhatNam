@@ -21,7 +21,7 @@ const fadeIn = keyframes`
   }
 `;
 
-const Container = styled.div<{ isLoading: boolean; isHidden: boolean }>`
+const Container = styled.div<{ $isLoading: boolean; $isHidden: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
@@ -34,8 +34,8 @@ const Container = styled.div<{ isLoading: boolean; isHidden: boolean }>`
   background: linear-gradient(to bottom, rgba(13, 17, 38, 0.95), rgba(21, 25, 46, 0.95));
   z-index: 1000;
   opacity: 1;
-  animation: ${props => (props.isLoading ? fadeIn : fadeOut)} 0.5s ease-in-out forwards;
-  visibility: ${props => (props.isHidden ? 'hidden' : 'visible')};
+  animation: ${props => (props.$isLoading ? fadeIn : fadeOut)} 0.5s ease-in-out forwards;
+  visibility: ${props => (props.$isHidden ? 'hidden' : 'visible')};
 `;
 
 const LogoContainer = styled.div`
@@ -66,10 +66,10 @@ const ProgressBar = styled.div`
   position: relative;
 `;
 
-const Progress = styled.div<{ progress: number }>`
+const Progress = styled.div<{ $progress: number }>`
   position: absolute;
   height: 100%;
-  width: ${props => props.progress}%;
+  width: ${props => props.$progress}%;
   background: ${props => props.theme.colors.primaryGradient};
   border-radius: 2px;
   transition: width 0.3s ease;
@@ -115,14 +115,14 @@ const LoadingPage: React.FC = () => {
   }, []);
 
   return (
-    <Container isLoading={isLoading} isHidden={isHidden}>
+    <Container $isLoading={isLoading} $isHidden={isHidden}>
       <LogoContainer>
         <Logo>TYMEX</Logo>
       </LogoContainer>
       <Spin size="large" />
       <LoadingMessage>Loading amazing experience...</LoadingMessage>
       <ProgressBar>
-        <Progress progress={progress} />
+        <Progress $progress={progress} />
       </ProgressBar>
     </Container>
   );

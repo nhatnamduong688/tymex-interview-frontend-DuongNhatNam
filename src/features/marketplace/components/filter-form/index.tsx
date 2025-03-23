@@ -217,13 +217,13 @@ export function Filter() {
               range
               min={0}
               max={200}
-              defaultValue={formValues.priceRange || [0, 200]}
+              value={formValues.priceRange || [0, 200]}
               onChange={(value: number | number[]) => {
                 if (Array.isArray(value) && value.length === 2) {
                   handleDrawerPriceRangeChange(value as [number, number]);
                 }
               }}
-              tipFormatter={(value) => `$${value}`}
+              tooltip={{ formatter: (value) => `$${value}` }}
             />
           </Form.Item>
           

@@ -15,7 +15,7 @@ const WhitepaperPage = lazy(() => import('../pages/WhitepaperPage'));
 // Apply HOC
 const AboutUsPageWithLoading = withPageLoading(AboutUsPage);
 const OurTeamsPageWithLoading = withPageLoading(OurTeamsPage);
-const MarketplacePageWithLoading = withPageLoading(MarketplacePage);
+const MarketplacePageWithLoading = (MarketplacePage);
 const RoadmapPageWithLoading = withPageLoading(RoadmapPage);
 const WhitepaperPageWithLoading = withPageLoading(WhitepaperPage);
 
@@ -49,10 +49,10 @@ export const routes = createBrowserRouter([
         path: 'roadmap',
         element: <RoadmapPageWithLoading />
       },
-      {
-        path: 'whitepaper',
-        element: <WhitepaperPageWithLoading />
-      }
+      // {
+      //   path: 'whitepaper',
+      //   element: <WhitepaperPageWithLoading />
+      // }
     ]
   },
   {

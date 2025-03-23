@@ -185,7 +185,7 @@ const filterSlice = createSlice({
     
     // Set filters from URL params
     setFiltersFromUrl: (state, action: PayloadAction<Record<string, any>>) => {
-      const urlParams = action.payload;
+      const urlParams = action.payload || {};
       console.log('FILTER SLICE: Setting filters from URL params:', urlParams);
       
       // Deep clone parameter values to avoid reference issues

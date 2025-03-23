@@ -290,7 +290,7 @@ export const FiltersContainer = styled.div`
 
 export const FiltersButton = styled.button`
     background-color: transparent;
-    color: white;
+    //color: white;
     border: 2px solid white;
     border-radius: 5px;
     padding: 12px 25px;
@@ -310,7 +310,7 @@ export const ConnectWalletButton = styled.button`
     top: 20px;
     right: 20px;
     background-image: ${props => props.theme.colors.primaryGradient};
-    color: white;
+    //color: white;
     border: none;
     border-radius: 5px;
     padding: 10px 20px;
@@ -325,7 +325,7 @@ export const MenuButton = styled.button`
     top: 20px;
     left: 20px;
     background: transparent;
-    color: white;
+    //color: white;
     border: none;
     font-size: 24px;
     cursor: pointer;

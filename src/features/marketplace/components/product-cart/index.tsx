@@ -8,7 +8,7 @@ interface ProductCartProps {
 }
 
 interface ImageProps {
-  loaded?: boolean;
+  $loaded?: boolean;
 }
 
 const CardContainer = styled.div`
@@ -48,7 +48,7 @@ const BackgroundImage = styled.img<ImageProps>`
   background-color: #1f2432;
   will-change: transform;
   transform: translateZ(0);
-  opacity: ${props => props.loaded ? 1 : 0};
+  opacity: ${props => props.$loaded ? 1 : 0};
   transition: opacity 0.3s ease-in-out;
 `;
 
@@ -60,7 +60,7 @@ const ItemImage = styled.img<ImageProps>`
   max-width: 60%;
   max-height: 60%;
   object-fit: contain;
-  opacity: ${props => props.loaded ? 1 : 0};
+  opacity: ${props => props.$loaded ? 1 : 0};
   transition: opacity 0.3s ease-in-out;
 `;
 
@@ -175,7 +175,7 @@ export const ProductCart = memo<ProductCartProps>(({ product }) => {
           alt={product.name}
           loading="lazy" 
           decoding="async"
-          loaded={bgLoaded}
+          $loaded={bgLoaded}
           onLoad={() => setBgLoaded(true)}
         />
         <ItemImage 
@@ -183,7 +183,7 @@ export const ProductCart = memo<ProductCartProps>(({ product }) => {
           alt={product.name}
           loading="lazy"
           decoding="async"
-          loaded={itemLoaded}
+          $loaded={itemLoaded}
           onLoad={() => setItemLoaded(true)}
         />
       </CardBackground>

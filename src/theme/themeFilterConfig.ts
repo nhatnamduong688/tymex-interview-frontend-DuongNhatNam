@@ -4,7 +4,7 @@ const themeFilter: ThemeConfig = {
   components: {
     Form: {
       colorBgContainer: 'transparent',
-      colorText: '#ffffff',
+      // colorText: '#ffffff',
       colorTextDescription: 'rgba(255, 255, 255, 0.6)',
     },
     Input: {
@@ -25,11 +25,11 @@ const themeFilter: ThemeConfig = {
     Select: {
       colorBgContainer: '#31393E',
       colorBgElevated: '#31393E',
-      colorText: '#ffffff',
+      // colorText: '#ffffff',
       colorTextPlaceholder: 'rgba(255, 255, 255, 0.45)',
       colorBorder: '#31393E',
-      colorPrimaryHover: '#e6f7ff',
-      optionSelectedColor: '#e6f7ff',
+      // colorPrimaryHover: '#e6f7ff',
+      // optionSelectedColor: '#e6f7ff',
       optionSelectedBg: 'rgba(24, 144, 255, 0.1)',
       colorTextDisabled: 'rgba(255, 255, 255, 0.25)',
       optionHeight: 32,
@@ -37,8 +37,8 @@ const themeFilter: ThemeConfig = {
     Button: {
       primaryColor: '#1890ff',
       defaultBg: 'transparent',
-      defaultColor: '#ffffff',
-      defaultBorderColor: '#ffffff',
+      // defaultColor: '#ffffff',
+      // defaultBorderColor: '#ffffff',
       textHoverBg: 'rgba(255, 255, 255, 0.1)',
     }
   },

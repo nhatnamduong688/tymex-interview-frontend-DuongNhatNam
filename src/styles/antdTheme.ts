@@ -6,7 +6,7 @@ const theme: ThemeConfig = {
     fontFamily: "Inter, sans-serif",
     borderRadius: 4,
     colorPrimary: "#da458f",
-    colorText: "#fff",
+    // colorText: "#fff",
     colorBorder: "#89888B",
     controlOutlineWidth: 0,
     colorTextPlaceholder: "#89888b",

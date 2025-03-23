@@ -10,10 +10,31 @@ import styled from "styled-components";
 import { useDispatch } from 'react-redux';
 import { setFiltersFromUrl } from './store/filterSlice';
 
-const Container = styled.div`
-  padding: 40px 20px;
+const MarketplaceContainer = styled.div`
+  position: relative;
+  min-height: 100vh;
+  background-color: rgba(12, 13, 26, 0.95);
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  
+  /* Thêm fallback background tối */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #0c0d1a;
+    z-index: -1;
+  }
+`;
+
+const ContentArea = styled.div`
   max-width: 1280px;
   margin: 0 auto;
+  padding: 40px 20px;
   background-color: transparent;
   will-change: transform;
   contain: content;
@@ -35,39 +56,35 @@ export const MarketPlaceModule = () => {
   const { isCollapsed } = useBreakpoint();
   const dispatch = useDispatch();
   
-  // Use effect to process URL params whenever they change
+  // Effect để đọc các tham số filter từ URL khi component mount
   useEffect(() => {
-    // Get current URL search params
-    const searchParams = new URLSearchParams(window.location.search);
-    const urlParams: Record<string, any> = {};
+    // Get query params from URL and convert to object
+    const queryString = window.location.search;
+    const urlSearchParams = new URLSearchParams(queryString);
+    const params = Object.fromEntries(urlSearchParams.entries());
     
-    // Extract all URL parameters
-    searchParams.forEach((value, key) => {
-      if (value.includes(',')) {
-        urlParams[key] = value.split(',');
-      } else {
-        // Parse numbers but keep tier and theme as strings
-        if (!isNaN(Number(value)) && key !== 'categories' && key !== 'tier' && key !== 'theme') {
-          urlParams[key] = Number(value);
-        } else {
-          urlParams[key] = value;
-        }
-      }
-    });
-    
-    // Only dispatch if parameters exist
-    if (Object.keys(urlParams).length > 0) {
-      console.log('[MarketplaceModule] URL parameters detected:', urlParams);
-      dispatch(setFiltersFromUrl(urlParams));
-    }
-  }, [dispatch, window.location.search]);
+    // Dispatch with empty object if no params found
+    dispatch(setFiltersFromUrl(params || {}));
+  }, [dispatch]);
   
-  // No need for useSyncUrlWithFilters hook as it's handled by Redux middleware now
-
+  // Preload background images để tránh flash
+  useEffect(() => {
+    // Preload các assets cần thiết
+    const imagesToPreload = [
+      '/assets/images/custom/space-background.jpg',
+      '/assets/images/section-frame.png'
+    ];
+    
+    imagesToPreload.forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+  
   return (
-    <article>
+    <MarketplaceContainer>
       <BannerSection />
-      <Container>
+      <ContentArea>
         {isCollapsed && <FilterMobile />}
 
         <Row gutter={16}>
@@ -81,7 +98,7 @@ export const MarketPlaceModule = () => {
             <ProductList />
           </ProductListWrapper>
         </Row>
-      </Container>
-    </article>
+      </ContentArea>
+    </MarketplaceContainer>
   );
 }; 

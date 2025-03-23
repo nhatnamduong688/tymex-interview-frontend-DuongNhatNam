@@ -18,7 +18,7 @@ const App = () => {
                 <GlobalStyles />
                 {/*<TopProgressBar />*/}
                 <RouterProvider router={routes} />
-                {process.env.NODE_ENV !== 'production' && <ApiDebugger />}
+                {/*{process.env.NODE_ENV !== 'production' && <ApiDebugger />}*/}
             </ThemeProvider>
         </ConfigProvider>
     );

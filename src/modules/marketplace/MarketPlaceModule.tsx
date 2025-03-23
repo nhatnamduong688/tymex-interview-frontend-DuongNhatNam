@@ -29,6 +29,7 @@ const ProductListWrapper = styled(Col)`
 `;
 
 export const MarketPlaceModule = () => {
+
   const { isCollapsed } = useBreakpoint();
   const dispatch = useDispatch();
   

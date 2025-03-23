@@ -172,8 +172,8 @@ export const FilterForm: React.FC<FilterFormProps> = ({
           prefix={<SearchOutlined />} 
           onChange={onSearchChange}
           allowClear
-          // Hiển thị search value nếu có
-          defaultValue={currentValues.keyword || currentValues.search}
+          // Sử dụng value thay vì defaultValue
+          value={currentValues.keyword || currentValues.search || ''}
         />
       </Form.Item>
 
@@ -185,13 +185,13 @@ export const FilterForm: React.FC<FilterFormProps> = ({
             range
             min={0}
             max={200}
-            defaultValue={currentValues.priceRange || [0, 200]}
+            value={currentValues.priceRange || [0, 200]}
             onChange={(value: number | number[]) => {
               if (Array.isArray(value) && value.length === 2) {
                 handlePriceRangeChange(value as [number, number]);
               }
             }}
-            tipFormatter={value => `$${value}`}
+            tooltip={{ formatter: value => `$${value}` }}
           />
         </SliderContainer>
       </Form.Item>
