@@ -9,7 +9,6 @@ import { RootState } from '../../store';
 import { fetchProducts, fetchMoreProducts } from '../../store/productsSlice';
 import { resetFilter } from '../../store/filterSlice';
 import { TProduct } from '../../types/product';
-import { FixedSizeGrid, GridChildComponentProps } from 'react-window';
 import useWindowSize from '../../../../shared/hooks/useWindowSize';
 
 // Styled components
@@ -18,6 +17,7 @@ const StyledProductList = styled.div`
   flex-direction: column;
   gap: 20px;
   background-color: transparent;
+  min-height: 100vh;
 `;
 
 const SearchContainer = styled.div`
@@ -44,10 +44,11 @@ const ProductGrid = styled.div<{ $cols: number }>`
   backface-visibility: hidden;
 `;
 
-const LoadMoreContainer = styled.div`
+const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  padding: 30px 0;
+  width: 100%;
 `;
 
 const NoResultsContainer = styled.div`
@@ -82,6 +83,11 @@ const RetryButton = styled(Button)`
 const ProductsContainer = styled.div`
   margin-top: 20px;
   background-color: transparent;
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 16px;
 `;
 
 const EmptyContainer = styled.div`
@@ -115,11 +121,6 @@ const ClearFilters = styled.button`
   &:hover {
     color: #40a9ff;
   }
-`;
-
-const LoadMoreButton = styled(Button)`
-  margin: 24px auto;
-  display: block;
 `;
 
 const TotalResults = styled.div`
@@ -177,14 +178,10 @@ export const ProductList = () => {
   const { screens } = useBreakpoint();
   const windowSize = useWindowSize();
   
-  // Dùng ref để theo dõi lần load đầu tiên
+  // Refs
+  const loadingRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
-  const gridRef = useRef<FixedSizeGrid>(null);
-  const previousProductsLength = useRef(0);
-  
-  // Local state for grid dimensions
-  const [gridDimensions, setGridDimensions] = useState({ width: 0, height: 0 });
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const isLoadingMore = useRef(false);
   
   // Get products state from Redux
   const { 
@@ -208,98 +205,50 @@ export const ProductList = () => {
   };
 
   const columns = getColumns();
-  const itemHeight = 385; // Height of a product card + gap
   
-  // Update grid dimensions when window size changes
-  useEffect(() => {
-    if (windowSize.width) {
-      setGridDimensions({
-        width: Math.min(windowSize.width - 32, 1200), // Max width with padding
-        height: Math.min(windowSize.height * 0.7, 800) // Limit height to 70% of viewport or 800px
-      });
-    }
-  }, [windowSize]);
-  
-  // Fetch products when component mounts or appliedFilters change
-  useEffect(() => {
-    console.log("Fetching products with filters:", appliedFilters);
+  // Handle retry button click
+  const handleRetry = () => {
     dispatch(fetchProducts());
-  }, [dispatch, appliedFilters]);
-
-  // Effect to scroll to newly loaded items
-  useEffect(() => {
-    if (isLoadingMore && products.length > previousProductsLength.current) {
-      // Calculate the row index where new products start
-      const startRowIndex = Math.floor(previousProductsLength.current / columns);
-      
-      // Scroll to the row
-      if (gridRef.current && gridRef.current.scrollToItem) {
-        gridRef.current.scrollToItem({
-          rowIndex: startRowIndex,
-          align: 'start'
-        });
-      }
-      
-      // Reset loading more flag
-      setIsLoadingMore(false);
-      previousProductsLength.current = products.length;
-    }
-  }, [products, columns, isLoadingMore]);
-  
-  // Set initial products length for comparison
-  useEffect(() => {
-    if (!isLoadingMore) {
-      previousProductsLength.current = products.length;
-    }
-  }, [products.length, isLoadingMore]);
-  
-  console.log("ProductList render với", products.length, "sản phẩm:", products);
-  console.log("Filters từ Redux:", appliedFilters);
-  
-  // Convert filter state to readable format
-  const getActiveFilters = () => {
-    const activeFilters = [];
-    
-    if (appliedFilters.search) {
-      activeFilters.push(`Search: "${appliedFilters.search}"`);
-    }
-    
-    if (appliedFilters.categories && appliedFilters.categories.length > 0) {
-      activeFilters.push(`Categories: ${appliedFilters.categories.join(', ')}`);
-    }
-    
-    if (appliedFilters.tier) {
-      activeFilters.push(`Tier: ${appliedFilters.tier}`);
-    }
-    
-    if (appliedFilters.theme) {
-      activeFilters.push(`Theme: ${appliedFilters.theme}`);
-    }
-    
-    if (appliedFilters.priceRange) {
-      activeFilters.push(`Price: $${appliedFilters.priceRange[0]} - $${appliedFilters.priceRange[1]}`);
-    }
-    
-    return activeFilters;
   };
   
-  // Clear all filters and refresh products
+  // Handle clear filters button click
   const handleClearFilters = () => {
     dispatch(resetFilter());
   };
   
-  // Retry loading products
-  const handleRetry = () => {
-    dispatch(fetchProducts());
-  };
-
-  // Load more products
-  const loadMore = () => {
-    console.log("Dispatching fetchMoreProducts");
-    setIsLoadingMore(true);
-    dispatch(fetchMoreProducts());
-  };
-
+  // Get active filters for display
+  function getActiveFilters() {
+    const filters = [];
+    const { 
+      search, theme, tier, minPrice, maxPrice, sortTime, sortPrice, categories 
+    } = appliedFilters;
+    
+    if (search) filters.push(`Search: ${search}`);
+    if (theme) filters.push(`Theme: ${theme}`);
+    if (tier) filters.push(`Tier: ${tier}`);
+    
+    if (minPrice || maxPrice) {
+      const priceFilter = `Price: ${minPrice || 0} - ${maxPrice || '∞'}`;
+      filters.push(priceFilter);
+    }
+    
+    if (sortTime) {
+      const sortLabel = sortTime === 'desc' ? 'Newest first' : 'Oldest first';
+      filters.push(`Sort: ${sortLabel}`);
+    }
+    
+    if (sortPrice) {
+      const sortLabel = sortPrice === 'desc' ? 'Highest price' : 'Lowest price';
+      filters.push(`Sort: ${sortLabel}`);
+    }
+    
+    if (categories && categories.length) {
+      filters.push(`Categories: ${categories.join(', ')}`);
+    }
+    
+    return filters;
+  }
+  
   // Prefetch images for products to prevent white flashes during scrolling
   useEffect(() => {
     if (products.length > 0) {
@@ -316,32 +265,40 @@ export const ProductList = () => {
     }
   }, [products]);
 
-  const activeFilters = getActiveFilters();
-  const hasFilters = activeFilters.length > 0;
-
-  // Render a cell in the virtualized grid
-  const Cell = useCallback(({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
-    const itemIndex = rowIndex * columns + columnIndex;
+  // Setup Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !loading && !isFetchingNextPage && !isLoadingMore.current) {
+          isLoadingMore.current = true;
+          dispatch(fetchMoreProducts()).finally(() => {
+            isLoadingMore.current = false;
+          });
+        }
+      },
+      { threshold: 0.1 }
+    );
     
-    // Return empty cell if index is out of bounds
-    if (itemIndex >= products.length) return null;
-    
-    // Return skeleton if loading more and at the bottom rows
-    if (isFetchingNextPage && itemIndex >= previousProductsLength.current) {
-      return (
-        <div style={{...style, padding: '8px'}}>
-          <ProductSkeleton />
-        </div>
-      );
+    if (loadingRef.current) {
+      observer.observe(loadingRef.current);
     }
     
-    const product = products[itemIndex];
-    return (
-      <div style={{...style, padding: '8px'}}>
-        <ProductCart product={product} />
-      </div>
-    );
-  }, [products, columns, isFetchingNextPage, previousProductsLength]);
+    return () => {
+      if (loadingRef.current) {
+        observer.unobserve(loadingRef.current);
+      }
+    };
+  }, [dispatch, hasMore, loading, isFetchingNextPage, products.length]);
+  
+  // Fetch products when component mounts or appliedFilters change
+  useEffect(() => {
+    console.log("Fetching products with filters:", appliedFilters);
+    dispatch(fetchProducts());
+  }, [dispatch, appliedFilters]);
+
+  const activeFilters = getActiveFilters();
+  const hasFilters = activeFilters.length > 0;
 
   // Render loading skeletons
   const renderSkeletons = () => {
@@ -463,36 +420,18 @@ export const ProductList = () => {
               
               <TotalResults>Found {totalCount} products</TotalResults>
               
-              {gridDimensions.width > 0 && (
-                <FixedSizeGrid
-                  ref={gridRef}
-                  columnCount={columns}
-                  columnWidth={(gridDimensions.width / columns) - 8}
-                  height={gridDimensions.height}
-                  rowCount={Math.ceil(products.length / columns)}
-                  rowHeight={itemHeight}
-                  width={gridDimensions.width}
-                  overscanRowCount={2}
-                  style={{ margin: '0 auto' }}
-                >
-                  {Cell}
-                </FixedSizeGrid>
-              )}
+              <ProductGrid $cols={columns}>
+                {products.map((product: TProduct, index: number) => (
+                  <ProductCart key={product.id || index} product={product} />
+                ))}
+              </ProductGrid>
               
-              {isFetchingNextPage && (
-                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+              {/* Loading indicator for infinite scroll */}
+              <LoadingContainer ref={loadingRef}>
+                {(isFetchingNextPage || hasMore) && (
                   <Spin size="large" />
-                </div>
-              )}
-              
-              {hasMore && !isFetchingNextPage && (
-                <LoadMoreButton 
-                  type="primary" 
-                  onClick={loadMore}
-                >
-                  Load More
-                </LoadMoreButton>
-              )}
+                )}
+              </LoadingContainer>
             </ProductsContainer>
           </>
         )}
