@@ -7,6 +7,10 @@ interface ProductCartProps {
   product: TProduct;
 }
 
+interface ImageProps {
+  loaded?: boolean;
+}
+
 const CardContainer = styled.div`
   position: relative;
   overflow: hidden;
@@ -37,7 +41,7 @@ const CardBackground = styled.div`
   will-change: contents;
 `;
 
-const BackgroundImage = styled.img`
+const BackgroundImage = styled.img<ImageProps>`
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -48,7 +52,7 @@ const BackgroundImage = styled.img`
   transition: opacity 0.3s ease-in-out;
 `;
 
-const ItemImage = styled.img`
+const ItemImage = styled.img<ImageProps>`
   position: absolute;
   top: 50%;
   left: 50%;

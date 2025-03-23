@@ -9,7 +9,7 @@ import { RootState } from '../../store';
 import { fetchProducts, fetchMoreProducts } from '../../store/productsSlice';
 import { resetFilter } from '../../store/filterSlice';
 import { TProduct } from '../../types/product';
-import { FixedSizeGrid } from 'react-window';
+import { FixedSizeGrid, GridChildComponentProps } from 'react-window';
 import useWindowSize from '../../../../shared/hooks/useWindowSize';
 
 // Styled components
@@ -179,7 +179,7 @@ export const ProductList = () => {
   
   // Dùng ref để theo dõi lần load đầu tiên
   const isInitialMount = useRef(true);
-  const gridRef = useRef(null);
+  const gridRef = useRef<FixedSizeGrid>(null);
   const previousProductsLength = useRef(0);
   
   // Local state for grid dimensions
@@ -233,7 +233,7 @@ export const ProductList = () => {
       const startRowIndex = Math.floor(previousProductsLength.current / columns);
       
       // Scroll to the row
-      if (gridRef.current) {
+      if (gridRef.current && gridRef.current.scrollToItem) {
         gridRef.current.scrollToItem({
           rowIndex: startRowIndex,
           align: 'start'
@@ -304,13 +304,13 @@ export const ProductList = () => {
   useEffect(() => {
     if (products.length > 0) {
       products.forEach((product: TProduct) => {
-        if (product.image) {
+        if (product.imageBg) {
           const img = new Image();
-          img.src = product.image;
+          img.src = product.imageBg;
         }
-        if (product.backgroundImage) {
+        if (product.imageItem) {
           const bgImg = new Image();
-          bgImg.src = product.backgroundImage;
+          bgImg.src = product.imageItem;
         }
       });
     }
@@ -320,7 +320,7 @@ export const ProductList = () => {
   const hasFilters = activeFilters.length > 0;
 
   // Render a cell in the virtualized grid
-  const Cell = useCallback(({ columnIndex, rowIndex, style }) => {
+  const Cell = useCallback(({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
     const itemIndex = rowIndex * columns + columnIndex;
     
     // Return empty cell if index is out of bounds
