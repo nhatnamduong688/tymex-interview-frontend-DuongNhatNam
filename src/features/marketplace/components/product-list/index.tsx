@@ -123,6 +123,24 @@ const ClearFilters = styled.button`
   }
 `;
 
+const ViewMoreButton = styled(Button)`
+  background-color: #E83E8C;
+  border: none;
+  color: white;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 6px;
+  margin: 40px auto;
+  display: block;
+  min-width: 200px;
+  
+  &:hover, &:focus {
+    background-color: #d62f7e;
+    color: white;
+  }
+`;
+
 const TotalResults = styled.div`
   margin-bottom: 16px;
   color: #ccc;
@@ -178,10 +196,8 @@ export const ProductList = () => {
   const { screens } = useBreakpoint();
   const windowSize = useWindowSize();
   
-  // Refs
-  const loadingRef = useRef<HTMLDivElement>(null);
-  const isInitialMount = useRef(true);
-  const isLoadingMore = useRef(false);
+  // State để theo dõi việc đang tải thêm sản phẩm
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // Get products state from Redux
   const { 
@@ -209,6 +225,14 @@ export const ProductList = () => {
   // Handle retry button click
   const handleRetry = () => {
     dispatch(fetchProducts());
+  };
+  
+  // Handle view more button click
+  const handleViewMore = () => {
+    setIsLoadingMore(true);
+    dispatch(fetchMoreProducts()).finally(() => {
+      setIsLoadingMore(false);
+    });
   };
   
   // Handle clear filters button click
@@ -264,32 +288,6 @@ export const ProductList = () => {
       });
     }
   }, [products]);
-
-  // Setup Intersection Observer for infinite scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMore && !loading && !isFetchingNextPage && !isLoadingMore.current) {
-          isLoadingMore.current = true;
-          dispatch(fetchMoreProducts()).finally(() => {
-            isLoadingMore.current = false;
-          });
-        }
-      },
-      { threshold: 0.1 }
-    );
-    
-    if (loadingRef.current) {
-      observer.observe(loadingRef.current);
-    }
-    
-    return () => {
-      if (loadingRef.current) {
-        observer.unobserve(loadingRef.current);
-      }
-    };
-  }, [dispatch, hasMore, loading, isFetchingNextPage, products.length]);
   
   // Fetch products when component mounts or appliedFilters change
   useEffect(() => {
@@ -426,12 +424,22 @@ export const ProductList = () => {
                 ))}
               </ProductGrid>
               
-              {/* Loading indicator for infinite scroll */}
-              <LoadingContainer ref={loadingRef}>
-                {(isFetchingNextPage || hasMore) && (
+              {/* Loading indicator khi đang tải thêm */}
+              {isFetchingNextPage && (
+                <LoadingContainer>
                   <Spin size="large" />
-                )}
-              </LoadingContainer>
+                </LoadingContainer>
+              )}
+              
+              {/* View More button theo thiết kế Figma */}
+              {hasMore && !isFetchingNextPage && (
+                <ViewMoreButton
+                  onClick={handleViewMore}
+                  loading={isLoadingMore}
+                >
+                  View more
+                </ViewMoreButton>
+              )}
             </ProductsContainer>
           </>
         )}
