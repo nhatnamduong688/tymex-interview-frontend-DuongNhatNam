@@ -1,5 +1,6 @@
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import styled from "styled-components";
+import { Skeleton } from 'antd';
 import { TProduct } from '../../types/product';
 
 interface ProductCartProps {
@@ -43,6 +44,8 @@ const BackgroundImage = styled.img`
   background-color: #1f2432;
   will-change: transform;
   transform: translateZ(0);
+  opacity: ${props => props.loaded ? 1 : 0};
+  transition: opacity 0.3s ease-in-out;
 `;
 
 const ItemImage = styled.img`
@@ -53,6 +56,8 @@ const ItemImage = styled.img`
   max-width: 60%;
   max-height: 60%;
   object-fit: contain;
+  opacity: ${props => props.loaded ? 1 : 0};
+  transition: opacity 0.3s ease-in-out;
 `;
 
 const CardContent = styled.div`
@@ -141,21 +146,41 @@ export const ProductCart = memo<ProductCartProps>(({ product }) => {
   if (!product) {
     return <div>Loading product...</div>;
   }
+  
+  // State for tracking image loading
+  const [bgLoaded, setBgLoaded] = useState(false);
+  const [itemLoaded, setItemLoaded] = useState(false);
 
   return (
     <CardContainer>
       <CardBackground>
+        {!bgLoaded && (
+          <Skeleton.Image 
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }} 
+            active 
+          />
+        )}
         <BackgroundImage 
           src={product.imageBg} 
           alt={product.name}
           loading="lazy" 
           decoding="async"
+          loaded={bgLoaded}
+          onLoad={() => setBgLoaded(true)}
         />
         <ItemImage 
           src={product.imageItem} 
           alt={product.name}
           loading="lazy"
-          decoding="async" 
+          decoding="async"
+          loaded={itemLoaded}
+          onLoad={() => setItemLoaded(true)}
         />
       </CardBackground>
       

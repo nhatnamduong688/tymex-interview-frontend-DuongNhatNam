@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import { Skeleton, Input, Flex, Typography, Button, Empty, Alert, Space, Grid, Row, Col, Spin } from 'antd';
 import { SearchOutlined, ReloadOutlined, FilterOutlined } from '@ant-design/icons';
@@ -153,6 +153,25 @@ const ProductListBackgroundWrapper = styled.div`
   }
 `;
 
+// ProductSkeleton component for loading state
+const ProductSkeleton = () => (
+  <div style={{ padding: '8px' }}>
+    <div style={{ 
+      background: 'rgba(20, 25, 50, 0.7)', 
+      borderRadius: '8px', 
+      padding: '14px',
+      height: '365px',
+      boxShadow: '0 8px 20px rgba(0, 0, 0, 0.4)',
+      backdropFilter: 'blur(2px)',
+      border: '1px solid rgba(60, 80, 150, 0.2)'
+    }}>
+      <Skeleton.Image style={{ width: '100%', height: '180px', marginBottom: '14px' }} active />
+      <Skeleton active paragraph={{ rows: 2 }} title={{ width: '60%' }} />
+      <Skeleton.Button active style={{ marginTop: '10px', width: '40%' }} />
+    </div>
+  </div>
+);
+
 export const ProductList = () => {
   const dispatch = useAppDispatch();
   const { screens } = useBreakpoint();
@@ -161,9 +180,11 @@ export const ProductList = () => {
   // Dùng ref để theo dõi lần load đầu tiên
   const isInitialMount = useRef(true);
   const gridRef = useRef(null);
+  const previousProductsLength = useRef(0);
   
   // Local state for grid dimensions
   const [gridDimensions, setGridDimensions] = useState({ width: 0, height: 0 });
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // Get products state from Redux
   const { 
@@ -204,6 +225,33 @@ export const ProductList = () => {
     console.log("Fetching products with filters:", appliedFilters);
     dispatch(fetchProducts());
   }, [dispatch, appliedFilters]);
+
+  // Effect to scroll to newly loaded items
+  useEffect(() => {
+    if (isLoadingMore && products.length > previousProductsLength.current) {
+      // Calculate the row index where new products start
+      const startRowIndex = Math.floor(previousProductsLength.current / columns);
+      
+      // Scroll to the row
+      if (gridRef.current) {
+        gridRef.current.scrollToItem({
+          rowIndex: startRowIndex,
+          align: 'start'
+        });
+      }
+      
+      // Reset loading more flag
+      setIsLoadingMore(false);
+      previousProductsLength.current = products.length;
+    }
+  }, [products, columns, isLoadingMore]);
+  
+  // Set initial products length for comparison
+  useEffect(() => {
+    if (!isLoadingMore) {
+      previousProductsLength.current = products.length;
+    }
+  }, [products.length, isLoadingMore]);
   
   console.log("ProductList render với", products.length, "sản phẩm:", products);
   console.log("Filters từ Redux:", appliedFilters);
@@ -245,9 +293,10 @@ export const ProductList = () => {
     dispatch(fetchProducts());
   };
 
-  // Load more products when clicking "Load More"
+  // Load more products
   const loadMore = () => {
     console.log("Dispatching fetchMoreProducts");
+    setIsLoadingMore(true);
     dispatch(fetchMoreProducts());
   };
 
@@ -271,9 +320,20 @@ export const ProductList = () => {
   const hasFilters = activeFilters.length > 0;
 
   // Render a cell in the virtualized grid
-  const Cell = ({ columnIndex, rowIndex, style }) => {
+  const Cell = useCallback(({ columnIndex, rowIndex, style }) => {
     const itemIndex = rowIndex * columns + columnIndex;
+    
+    // Return empty cell if index is out of bounds
     if (itemIndex >= products.length) return null;
+    
+    // Return skeleton if loading more and at the bottom rows
+    if (isFetchingNextPage && itemIndex >= previousProductsLength.current) {
+      return (
+        <div style={{...style, padding: '8px'}}>
+          <ProductSkeleton />
+        </div>
+      );
+    }
     
     const product = products[itemIndex];
     return (
@@ -281,14 +341,25 @@ export const ProductList = () => {
         <ProductCart product={product} />
       </div>
     );
+  }, [products, columns, isFetchingNextPage, previousProductsLength]);
+
+  // Render loading skeletons
+  const renderSkeletons = () => {
+    const skeletonCount = columns * 2; // Show 2 rows of skeletons
+    return (
+      <ProductGrid $cols={columns}>
+        {Array.from({ length: skeletonCount }).map((_, index) => (
+          <ProductSkeleton key={index} />
+        ))}
+      </ProductGrid>
+    );
   };
 
   if (loading && !products.length) {
     return (
       <ProductListBackgroundWrapper>
         <EmptyContainer>
-          <Spin size="large" />
-          <div style={{ marginTop: 16, color: '#ccc' }}>Loading products...</div>
+          {renderSkeletons()}
         </EmptyContainer>
       </ProductListBackgroundWrapper>
     );
@@ -345,15 +416,6 @@ export const ProductList = () => {
             type="error"
             showIcon
           />
-        )}
-
-        {/* Loading state */}
-        {loading && !isFetchingNextPage && !error && (
-          <ProductGrid $cols={getColumns()}>
-            {Array.from({ length: 8 }).map((_, index) => (
-              <Skeleton key={index} active paragraph={{ rows: 4 }} />
-            ))}
-          </ProductGrid>
         )}
 
         {/* Empty state with active filters */}
@@ -417,10 +479,15 @@ export const ProductList = () => {
                 </FixedSizeGrid>
               )}
               
-              {hasMore && (
+              {isFetchingNextPage && (
+                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                  <Spin size="large" />
+                </div>
+              )}
+              
+              {hasMore && !isFetchingNextPage && (
                 <LoadMoreButton 
                   type="primary" 
-                  loading={isFetchingNextPage} 
                   onClick={loadMore}
                 >
                   Load More
