@@ -1,6 +1,6 @@
 import { PayloadAction, createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { TProduct } from '../../types/product';
-import productApi from '../../services/productApi';
+import * as productApi from '../../services/product/productApi';
 import { RootState } from '../index';
 
 export interface ProductsState {

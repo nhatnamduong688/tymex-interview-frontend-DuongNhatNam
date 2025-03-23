@@ -19,6 +19,7 @@ export type TProduct = {
   tier: ProductTier | string;
   theme: ProductTheme | string;
   tags: string[];
+  isFavorite?: boolean;     // Trạng thái yêu thích
 };
 
 export type TFilterProduct = {
@@ -45,4 +46,8 @@ export type TFilterProduct = {
   // Pagination - thường không là part của filter nhưng đôi khi được thêm vào
   _page?: number;           // Trang hiện tại
   _limit?: number;          // Số item trên mỗi trang
+  
+  // Favorites filtering
+  favorite?: boolean;       // Sử dụng cho filter sản phẩm yêu thích
+  isFavorite?: boolean;     // Alias cho favorite
 }; 

@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { API_BASE_URL } from './constants';
 
 // Define API response interface
 export interface ApiResponse<T> {
@@ -160,7 +161,6 @@ class ApiClient {
     
     // Handle direct query string if provided
     if (directQueryString) {
-      console.log(`Using direct query string: ${directQueryString}`);
       url = `${url}?${directQueryString}`;
     }
     
@@ -248,28 +248,14 @@ class ApiClient {
   async get<T>(url: string, params?: any, options?: RequestOptions): Promise<ApiResponse<T>> {
     // Detect if the URL already contains query parameters
     if (url.includes('?') && !params) {
-      // Extract the query string
       const [baseUrl, queryString] = url.split('?');
-      console.log(`Using URL with embedded query string: ${queryString}`);
-      
-      // Use the directQueryString option to pass the query string directly
-      return this.request<T>('GET', baseUrl, null, {
-        ...options,
-        directQueryString: queryString
+      return this.request<T>('GET', baseUrl, null, { 
+        ...options, 
+        directQueryString: queryString 
       });
     }
     
-    // Special handling for sort parameters
-    if (params && (params._sort || params._order)) {
-      console.log('Special handling for sort parameters:', 
-        params._sort ? `Sort by: ${params._sort}` : '', 
-        params._order ? `Order: ${params._order}` : '');
-    }
-    
-    return this.request<T>('GET', url, null, {
-      ...options,
-      params,
-    });
+    return this.request<T>('GET', url, null, { ...options, params });
   }
   
   /**
@@ -297,38 +283,31 @@ class ApiClient {
    * HTTP DELETE request
    */
   async delete<T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> {
-    return this.request<T>('DELETE', url, undefined, options);
+    return this.request<T>('DELETE', url, null, options);
   }
   
   /**
-   * Clear the entire response cache
+   * Clear all cache
    */
   clearCache(): void {
     this.cache.clear();
   }
   
   /**
-   * Clear specific cache entries by URL pattern
+   * Clear cache by URL pattern
    */
-  clearCacheByPattern(urlPattern: string): void {
-    const keys = Array.from(this.cache.keys());
-    keys.forEach(key => {
-      if (key.includes(urlPattern)) {
+  clearCacheByPattern(pattern: string): void {
+    for (const [key, item] of this.cache.entries()) {
+      if (item.url.includes(pattern)) {
         this.cache.delete(key);
       }
-    });
+    }
   }
 }
 
-// Create default API client instance
-const defaultApiClient = new ApiClient({
-  baseURL: 'https://tymex-mock-server-blr0.onrender.com',
-  timeout: 10000,
-  defaultRequestOptions: {
-    retries: 2,
-    cache: true,
-  }
+// Create and export default API client instance
+const apiClient = new ApiClient({
+  baseURL: API_BASE_URL,
 });
 
-export { ApiClient };
-export default defaultApiClient; 
+export default apiClient; 

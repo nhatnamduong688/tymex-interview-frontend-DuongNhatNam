@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 import { SortType } from '../enums/filter';
-
-// Correct the import pattern to export what we need
-import apiClient, { api, productService } from './api';
+import * as productApi from '../../services/product/productApi';
+import { apiClient } from '../../services';
 
 // Mocked version of convertFiltersToQueryParams since it's not exported
 const convertFiltersToQueryParams = vi.fn((
@@ -246,7 +245,7 @@ describe('API utilities', () => {
     });
     
     it('should call API with correct params', async () => {
-      await api.getProducts({ search: 'test', tier: 'Premium' });
+      await productApi.getProducts({ search: 'test', tier: 'Premium' });
       
       expect(mockAxiosGet).toHaveBeenCalledTimes(1);
       expect(mockAxiosGet).toHaveBeenCalledWith('/products', { 
@@ -258,7 +257,7 @@ describe('API utilities', () => {
     });
     
     it('should transform returned data', async () => {
-      const result = await api.getProducts({});
+      const result = await productApi.getProducts({});
       
       expect(result.data).toBeInstanceOf(Array);
       expect(result.data.length).toBe(1);

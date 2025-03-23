@@ -4,7 +4,7 @@ import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SortType } from '../../../enums/filter';
 import { TFilterProduct } from '../../../types/product';
-import { api } from '../../../services/api';
+import * as productApi from '../../../services/product';
 
 const { Option } = Select;
 
@@ -64,7 +64,7 @@ export const FilterForm: React.FC<FilterFormProps> = ({
       setIsLoadingFilters(true);
       try {
         // Fetch products to extract unique tiers and themes
-        const response = await api.getProducts();
+        const response = await productApi.getProducts();
         
         // Extract unique tiers
         const uniqueTiers = Array.from(new Set(

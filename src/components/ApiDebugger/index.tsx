@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { productService } from '../../services/api';
+import * as productApi from '../../services/product';
 import { TProduct } from '../../types/product';
+
+type ApiStatusType = 'connected' | 'disconnected' | 'checking' | 'retrying' | 'connecting';
 
 // Styled components
 const DebugContainer = styled.div<{ isVisible: boolean }>`
@@ -35,7 +37,7 @@ const Title = styled.h3`
   font-weight: 600;
 `;
 
-const StatusBadge = styled.span<{ status: 'connected' | 'disconnected' | 'checking' | 'retrying' }>`
+const StatusBadge = styled.span<{ status: ApiStatusType }>`
   display: inline-block;
   width: 8px;
   height: 8px;
@@ -46,6 +48,8 @@ const StatusBadge = styled.span<{ status: 'connected' | 'disconnected' | 'checki
       case 'connected': return '#4caf50';
       case 'disconnected': return '#f44336';
       case 'retrying': return '#ff9800';
+      case 'checking': return '#2196f3';
+      case 'connecting': return '#2196f3';
       default: return '#2196f3';
     }
   }};
@@ -150,38 +154,35 @@ const ButtonsContainer = styled.div`
 
 export const ApiDebugger: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [apiStatus, setApiStatus] = useState<'connected' | 'disconnected' | 'checking' | 'retrying'>('checking');
+  const [apiStatus, setApiStatus] = useState<ApiStatusType>('checking');
   const [sampleProduct, setSampleProduct] = useState<TProduct | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [apiUrl, setApiUrl] = useState<string>('');
   const [retryAttempt, setRetryAttempt] = useState<number>(0);
   const [maxRetries, setMaxRetries] = useState<number>(3);
   const [mockErrorMode, setMockErrorMode] = useState<boolean>(false);
+  const [products, setProducts] = useState<TProduct[]>([]);
   
   const retryTimeoutRef = useRef<number | null>(null);
 
   const checkApiConnection = async (forceError = false) => {
-    setApiStatus('checking');
-    setError(null);
-    setRetryAttempt(0);
-    
     try {
-      if (forceError || mockErrorMode) {
-        throw new Error('Forced error for testing');
+      // Set loading
+      setApiStatus('connecting');
+      setError(null);
+      setProducts([]);
+      
+      if (forceError) {
+        throw new Error('Mock API error for testing');
       }
       
       // Try to get first product as sample
-      const response = await productService.getProducts(1, 1);
+      const response = await productApi.getProducts({}, 1, 1);
       
       setApiStatus('connected');
-      
-      if (response.data.length > 0) {
-        setSampleProduct(response.data[0]);
+      if (response.data && response.data.length > 0) {
+        setProducts(response.data);
       }
-      
-      // Extract base URL
-      setApiUrl(import.meta.env.VITE_API_URL || 'https://tymex-mock-api.onrender.com');
-      
     } catch (err) {
       handleApiError(err);
     }

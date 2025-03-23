@@ -9,7 +9,7 @@ import {
 import { 
   resetProducts
 } from '../slices/productsSlice';
-import { api } from '../../services/api';
+import * as productApi from '../../services/product';
 import { TFilterProduct } from '../../types/product';
 import { RootState } from '../index';
 
