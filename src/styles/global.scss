@@ -1,0 +1,33 @@
+@import "./mixins";
+@import "./fonts";
+
+body {
+  --primary-bg: linear-gradient(91.47deg, #da458f -6%, #da34dd 113.05%);
+  --secondary-color: #89888b;
+  --header-height: 84px;
+  --mobile-header-height: 64px;
+  --heading-font: "Drone Ranger Pro", helvetica, arial, verdana, tahoma,
+    sans-serif;
+  font-family: Inter, Helvetica, Arial, Verdana, Tahoma, sans-serif;
+}
+
+.ant-btn {
+  > span {
+    font-weight: 600;
+  }
+
+  &-primary {
+    background: var(--primary-bg) !important;
+    box-shadow: 0 0 50px 0 #bb4bff52;
+  }
+}
+
+#nprogress .bar {
+  background: #da34dd !important;
+  height: 4px !important;
+  z-index: 120000000 !important;
+}
+
+#nprogress .spinner {
+  display: none !important;
+} 

@@ -1,85 +1,51 @@
-.formContainer {
-  flex: 0 0 25%;
-  max-width: 25%;
-  padding-left: 8px;
-  padding-right: 8px;
-  border-radius: var(--border-radius);
-  padding: var(--spacing-md);
-  background-color: var(--background-light);
+@import "../../../../../styles/mixins";
+
+.container-filter {
+  width: 320px;
+  padding: 24px;
+  background-color: rgba(12, 13, 26, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   
   @media (max-width: 1200px) {
-    flex: 0 0 33.33%;
-    max-width: 33.33%;
+    width: 350px;
   }
   
   @media (max-width: 992px) {
-    flex: 0 0 50%;
-    max-width: 50%;
+    width: 400px;
   }
   
   @media (max-width: 576px) {
-    flex: 0 0 100%;
-    max-width: 100%;
+    width: 100%;
   }
-}
 
-.containerFilter {
-  flex: 0 0 25%;
-  max-width: 350px;
-  padding: var(--spacing-md);
-  //background-color: var(--background-transparent);
-  //backdrop-filter: blur(10px);
-  //-webkit-backdrop-filter: blur(10px);
-  //border-radius: var(--border-radius);
-  //border: 1px solid rgba(255, 255, 255, 0.05);
-  
-  @media (max-width: 1200px) {
-    flex: 0 0 33.33%;
-    max-width: 350px;
+  .loading-select {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    color: rgba(255, 255, 255, 0.7);
   }
-  
-  @media (max-width: 992px) {
-    flex: 0 0 50%;
-    max-width: 400px;
-  }
-  
-  @media (max-width: 576px) {
-    flex: 0 0 100%;
-    max-width: 100%;
-  }
-}
 
-.styledForm {
-  margin: 0;
-  padding: 0;
-  color: var(--text);
-  font-size: 16px;
-  line-height: 1.5;
-  list-style: none;
-  font-family: Inter, sans-serif;
-  
   :global {
     .ant-slider {
       .ant-slider-rail {
-        background-color: var(--slider-rail-color) !important;
+        background-color: #3a3841 !important;
       }
 
       .ant-slider-track {
         background-image: var(--primary-bg) !important;
       }
 
-      .ant-slider-handle {
-        background-color: var(--primary-bg-color) !important;
-        border-color: var(--primary-bg-color) !important;
-      }
-
       .ant-slider-mark {
         top: 20px;
 
         .ant-slider-mark-text {
-          color: var(--text-secondary) !important;
+          color: #d6d6d6 !important;
           font-weight: 500 !important;
-          font-size: 14px;
+          font-size: 16px;
           width: 50%;
 
           &:first-child {
@@ -98,22 +64,14 @@
     .ant-input-outlined {
       padding-top: 6px !important;
       padding-bottom: 6px !important;
-      background-color: var(--input-bg) !important;
-      border-color: var(--input-border) !important;
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      
-      &:hover, &:focus {
-        border-color: var(--primary-bg-color) !important;
-      }
     }
 
     .ant-form-item {
       &-label {
         label {
-          color: var(--text-label);
+          color: #89888b;
           font-weight: 600;
-          font-size: 14px;
+          font-size: 16px;
           text-transform: uppercase;
         }
       }
@@ -123,114 +81,44 @@
       }
     }
 
-    .ant-select {
-      .ant-select-selector {
-        background-color: var(--input-bg) !important;
-        border-color: var(--input-border) !important;
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
-        
-        &:hover {
-          border-color: var(--primary-bg-color) !important;
-        }
-      }
-    }
-
     .ant-select-multiple {
       .ant-select-selection-item {
-        background: var(--primary-bg) !important;
+        background: linear-gradient(
+          91.47deg,
+          rgb(218 69 143 / 40%) -6%,
+          rgb(218 52 221 / 40%) 113.05%
+        ) !important;
         &:hover {
           opacity: 0.8;
         }
       }
 
       .anticon-close {
-        color: var(--text) !important;
+        color: #fff !important;
       }
     }
     
     .action-buttons {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       gap: 16px;
-      margin-top: 30px;
+      margin-top: 24px;
 
       .ant-btn {
-        flex: 1;
-        height: 40px;
-        
-        &-primary {
-          background: var(--primary-bg);
-          border: none;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(218, 69, 143, 0.3);
-          
-          &:hover {
-            background: var(--primary-hover) !important;
-          }
+        width: 120px;
+
+        .anticon-close-circle {
+          color: #fbc625;
         }
-        
-        &-text {
-          color: var(--text-secondary);
-          
-          .anticon-close-circle {
-            color: #fbc625;
-          }
-          
-          &:hover {
-            background: rgba(255, 255, 255, 0.05);
-          }
+      }
+      
+      .ant-btn-primary {
+        background-image: var(--primary-bg);
+        span {
+          @include gradient-text;
         }
       }
     }
   }
-}
-
-.actionButtonsContainer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--spacing-lg);
-  gap: 16px;
-}
-
-.resetButton {
-  min-width: 120px;
-  font-size: 16px;
-  height: 40px;
-  padding: 4px 16px;
-  border-radius: 4px;
-  
-  &:hover {
-    color: var(--text);
-    background: rgba(255, 255, 255, 0.05);
-  }
-  
-  :global(.anticon) {
-    margin-right: 6px;
-    color: #fbc625;
-  }
-}
-
-.searchButton {
-  min-width: 120px;
-  font-size: 16px;
-  height: 40px;
-  padding: 4px 16px;
-  border-radius: 4px;
-  background: var(--primary-bg);
-  border: none;
-  
-  &:hover {
-    background: var(--primary-hover) !important;
-  }
-}
-
-.loadingSelect {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  color: rgba(255, 255, 255, 0.7);
 } 

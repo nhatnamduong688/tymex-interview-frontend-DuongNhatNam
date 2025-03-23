@@ -1,0 +1,13 @@
+@import "../../../styles/mixins";
+
+.container-product-list {
+  @include container;
+  padding: 6% 0;
+}
+
+.product-list-inner {
+  padding: 0 24px !important;
+  display: flex !important;
+  flex-direction: column;
+  gap: 24px;
+} 

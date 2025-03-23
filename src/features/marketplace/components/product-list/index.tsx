@@ -1,40 +1,11 @@
 import React, { useEffect } from 'react';
-import styled from 'styled-components';
 import { Empty, Flex, List, Typography } from 'antd';
 import { ProductCart } from '../product-cart';
 import { TProduct } from '../../types/product';
 import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 import { Button } from '../../../../shared/components/Button';
 import { useProduct } from './hook';
-
-// Root container for product list
-const ProductListContainer = styled.div`
-  .btn-load-more {
-    margin: 55px auto 0 !important;
-
-    .ant-btn {
-      width: 160px;
-    }
-  }
-
-  .ant-empty {
-    .ant-typography {
-      background: linear-gradient(
-        91.47deg,
-        #da458f -6%,
-        #da34dd 113.05%
-      );
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-top: 8px;
-    }
-  }
-
-  .loading-spinner {
-    width: 100%;
-    height: 500px;
-  }
-`;
+import styles from './scss/ProductList.module.scss';
 
 export const ProductList = () => {
   const { dataProduct, hasMore, fetchNextPage, isLoading, isFetchingNextPage } = useProduct();
@@ -56,7 +27,7 @@ export const ProductList = () => {
   }, [dataProduct]);
 
   return (
-    <ProductListContainer>
+    <div className={styles["product-list-container"]}>
       {isLoading && dataProduct.length > 0 && <LoadingSpinner />}
       {!isLoading && (
         <List
@@ -107,6 +78,6 @@ export const ProductList = () => {
           </Button>
         </Flex>
       )}
-    </ProductListContainer>
+    </div>
   );
 }; 

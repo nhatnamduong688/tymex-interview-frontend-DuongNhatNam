@@ -112,19 +112,33 @@ export const FilterForm: React.FC<FilterFormProps> = ({
   
   // Update form when currentValues changes from Redux
   useEffect(() => {
-    form.setFieldsValue({
-      ...currentValues,
-      // Đảm bảo keyword được hiển thị từ cả search hoặc keyword
-      keyword: currentValues.keyword || currentValues.search,
-      // Đảm bảo các giá trị khác được cập nhật đúng
-      priceRange: currentValues.priceRange || [0.01, 200],
-      sortTime: currentValues.sortTime || '',
-      sortPrice: currentValues.sortPrice || ''
-    });
+    if (currentValues) {
+      form.setFieldsValue({
+        ...currentValues,
+        // Đảm bảo keyword được hiển thị từ cả search hoặc keyword
+        keyword: currentValues.keyword || currentValues.search,
+        // Đảm bảo các giá trị khác được cập nhật đúng
+        priceRange: currentValues.priceRange || [0.01, 200],
+        sortTime: currentValues.sortTime || '',
+        sortPrice: currentValues.sortPrice || ''
+      });
+    }
   }, [currentValues, form]);
   
+  // Default values for currentValues khi undefined
+  const defaultValues = {
+    keyword: '',
+    search: '',
+    priceRange: [0.01, 200],
+    sortTime: '',
+    sortPrice: ''
+  };
+  
+  // Safe access to currentValues
+  const safeCurrentValues = currentValues || defaultValues;
+  
   return (
-    <div className={styles.containerFilter}>
+    <div className={styles["container-filter"]}>
       <Form
         className={styles.styledForm}
         form={form}
@@ -132,8 +146,8 @@ export const FilterForm: React.FC<FilterFormProps> = ({
         layout="vertical"
         onFinish={handleFinish}
         initialValues={{
-          ...currentValues,
-          keyword: currentValues.keyword || currentValues.search,
+          ...safeCurrentValues,
+          keyword: safeCurrentValues.keyword || safeCurrentValues.search,
           priceRange: [0.01, 200]
         }}
       >
@@ -152,7 +166,7 @@ export const FilterForm: React.FC<FilterFormProps> = ({
             min={0.01}
             max={200}
             marks={sliderMarks}
-            value={currentValues.priceRange || [0.01, 200]}
+            value={safeCurrentValues.priceRange || [0.01, 200]}
             onChange={(value: number | number[]) => {
               if (Array.isArray(value) && value.length === 2) {
                 handlePriceRangeChange(value as [number, number]);
@@ -165,7 +179,7 @@ export const FilterForm: React.FC<FilterFormProps> = ({
 
         <Form.Item name="tier" label="Tier">
           {isLoadingFilters ? (
-            <div className={styles.loadingSelect}>
+            <div className={styles["loading-select"]}>
               <Spin size="small" /> <span style={{ marginLeft: 8 }}>Loading tiers...</span>
             </div>
           ) : (
@@ -180,7 +194,7 @@ export const FilterForm: React.FC<FilterFormProps> = ({
 
         <Form.Item name="theme" label="Theme">
           {isLoadingFilters ? (
-            <div className={styles.loadingSelect}>
+            <div className={styles["loading-select"]}>
               <Spin size="small" /> <span style={{ marginLeft: 8 }}>Loading themes...</span>
             </div>
           ) : (
@@ -206,15 +220,14 @@ export const FilterForm: React.FC<FilterFormProps> = ({
         </Form.Item>
 
         <div className="action-buttons">
-          <Button 
-            type="text" 
-            onClick={onResetFilter}
+          <Button
             icon={<CloseCircleOutlined />}
+            onClick={onResetFilter}
           >
-            Reset filter
+            Reset
           </Button>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             htmlType="submit"
             loading={loading}
           >

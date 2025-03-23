@@ -203,7 +203,7 @@ export function Filter() {
                                     form.setFieldsValue({priceRange: value});
                                 }}
                                 tooltip={{formatter: value => `${value} ETH`}}
-                                styles={customSliderStyles}
+                                // styles={customSliderStyles}
                             />
                             <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 8}}>
                                 <span>{drawerPriceRange[0]} ETH</span>
