@@ -106,13 +106,6 @@ vi.mock('@ant-design/icons', () => ({
   ReloadOutlined: () => <span data-testid="reload-icon" />
 }));
 
-// Mock styled-components
-vi.mock('styled-components', () => ({
-  default: {
-    div: (props) => (args) => <div {...args} />,
-  }
-}));
-
 // Mock enums
 vi.mock('../../../enums/filter', () => ({
   ProductTheme: {

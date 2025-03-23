@@ -1,0 +1,29 @@
+/* IMPORTANT: This file must be imported BEFORE any SCSS modules to ensure variables are available */
+/* Example import order:
+   1. import './scss/variables.css'; 
+   2. import styles from './scss/FilterForm.module.scss';
+*/
+
+:root {
+  /* Spacing */
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  
+  /* Colors */
+  --background-light: #1f2937;
+  --background-dark: #0c0d1a;
+  --background-transparent: rgba(12, 13, 26, 0.7);
+  --text: #ffffff;
+  --text-secondary: #d6d6d6;
+  --text-label: #89888b;
+  --primary-bg: linear-gradient(91.47deg, rgba(218, 69, 143, 0.8) -6%, rgba(218, 52, 221, 0.8) 113.05%);
+  --primary-bg-color: #da458f;
+  --primary-hover: #2563eb;
+  --border-color: #374151;
+  --input-bg: rgba(12, 13, 26, 0.7);
+  --input-border: rgba(49, 57, 62, 0.5);
+  --slider-rail-color: rgba(58, 56, 65, 0.8);
+  
+  /* Border */
+  --border-radius: 8px;
+} 

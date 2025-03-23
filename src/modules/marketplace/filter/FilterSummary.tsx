@@ -1,26 +1,7 @@
 import React from 'react';
 import { Button, Tag } from 'antd';
 import { FilterOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
-
-const SummaryContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
-`;
-
-const FilterButton = styled(Button)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const TagsContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-`;
+import styles from './scss/FilterSummary.module.scss';
 
 interface FilterSummaryProps {
   filterSummary: string[];
@@ -34,24 +15,25 @@ export const FilterSummary: React.FC<FilterSummaryProps> = ({
   isFilterVisible
 }) => {
   return (
-    <SummaryContainer>
-      <FilterButton 
+    <div className={styles.summaryContainer}>
+      <Button 
+        className={styles.filterButton}
         icon={<FilterOutlined />} 
         onClick={onToggleFilter}
         type={isFilterVisible ? 'primary' : 'default'}
       >
         {isFilterVisible ? 'Hide Filters' : 'Show Filters'}
-      </FilterButton>
+      </Button>
       
       {filterSummary.length > 0 && (
-        <TagsContainer>
+        <div className={styles.tagsContainer}>
           {filterSummary.map((item, index) => (
             <Tag key={index} color="blue">
               {item}
             </Tag>
           ))}
-        </TagsContainer>
+        </div>
       )}
-    </SummaryContainer>
+    </div>
   );
 }; 

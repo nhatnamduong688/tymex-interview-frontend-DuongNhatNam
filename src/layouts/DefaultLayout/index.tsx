@@ -4,6 +4,7 @@ import { FooterLayout } from "../FooterLayout";
 import styled from "styled-components";
 import { Outlet, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import TopProgressBar from "../../components/TopProgressBar";
 
 const StyledLayout = styled(Layout)`
   background-image: url('/assets/images/background.png');
@@ -57,6 +58,7 @@ export const DefaultLayout = () => {
   
   return (
     <StyledLayout>
+      <TopProgressBar />
       <HeaderLayout />
       <Outlet />
       <SectionFrameWrapper />

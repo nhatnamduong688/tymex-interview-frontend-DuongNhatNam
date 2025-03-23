@@ -1,242 +1,250 @@
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { Form, Drawer, Button, Input, Select, Slider } from 'antd';
-import { FilterOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
-import { ConfigProvider } from 'antd';
+import React, {useEffect} from 'react';
+import {useSelector, useDispatch} from 'react-redux';
+import {Form, Drawer, Button, Input, Select, Slider, Space} from 'antd';
+import {FilterOutlined, SearchOutlined, ReloadOutlined} from '@ant-design/icons';
+import {ConfigProvider} from 'antd';
 import themeFilter from '../../../../shared/theme/themeFilterConfig';
-import { 
-  updateFormValues,
-  applyFilter,
-  resetFilter,
-  toggleFilterVisibility
+import {
+    updateFormValues,
+    applyFilter,
+    resetFilter,
+    toggleFilterVisibility
 } from '../../store/filterSlice';
-import { RootState } from '../../store';
-import { FilterForm } from './FilterForm';
-import { useFilterLogic } from './useFilterLogic';
-import { TFilterProduct } from '../../types/product';
+import {RootState} from '../../store';
+import {FilterForm} from './FilterForm';
+import {useFilterLogic} from './useFilterLogic';
+import {TFilterProduct} from '../../types/product';
+import {squareHandleSliderStyles, createSliderStyles} from '../../../../styles/sliderStyles';
 
-const { Option } = Select;
+// Important: Order of imports matters for CSS!
+// 1. First import CSS variables
+import './scss/variables.css';
+// 2. Then import module styles
+import styles from './scss/FilterForm.module.scss';
+import filterStyles from './scss/Filter.module.scss';
 
-// Styled components
-const FilterButton = styled(Button)`
-  margin-right: 16px;
-`;
+const {Option} = Select;
 
-const FilterHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-`;
-
-const FilterTitle = styled.h2`
-  margin: 0;
-  font-size: 18px;
-  color: #333;
-`;
-
-const DesktopFilterContainer = styled.div`
-  background: #fff;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
-  
-  @media (max-width: 768px) {
-    display: none;
-  }
-`;
-
-const MobileFilterButton = styled(Button)`
-  margin-bottom: 16px;
-  
-  @media (min-width: 769px) {
-    display: none;
-  }
-`;
-
-const PriceRangeContainer = styled.div`
-  margin-bottom: 24px;
-`;
-
-const PriceInputsContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-`;
+// Sử dụng styles tạo từ theme token
+const customSliderStyles = createSliderStyles({
+    isSquare: true,
+    size: 'large',
+    customColors: {
+        railColor: 'rgba(118, 118, 128, 0.24)',
+        trackColor: '#3B82F6',
+        handleColor: '#3B82F6',
+    }
+});
 
 export function Filter() {
-  const dispatch = useDispatch();
-  const [form] = Form.useForm();
-  
-  // Get the current filter state from Redux
-  const { formValues, appliedFilters, isFilterVisible } = useSelector((state: RootState) => state.filter);
-  const loading = useSelector((state: RootState) => state.products.loading);
-  
-  // Get filter logic handlers
-  const { handleSearchChange } = useFilterLogic();
+    const dispatch = useDispatch();
+    const [form] = Form.useForm();
+    const [drawerPriceRange, setDrawerPriceRange] = React.useState<[number, number]>([0.01, 200]);
 
-  // Match the form fields to the current Redux state when it changes
-  useEffect(() => {
-    if (formValues) {
-      form.setFieldsValue({
-        ...formValues,
-        // Ensure the keyword field shows the most recent value from either keyword or search
-        keyword: formValues.keyword || formValues.search
-      });
+    // Get filter state from Redux
+    const {formValues, appliedFilters, isFilterVisible} = useSelector((state: RootState) => state.filter);
+    const loading = useSelector((state: RootState) => state.products.loading);
+
+    // Get filter logic from custom hook
+    const {handleSearchChange} = useFilterLogic();
+
+    // Apply initial values to form fields when component mounts
+    useEffect(() => {
+        form.resetFields();
+    }, []);
+
+    // Update form values when Redux state changes
+    useEffect(() => {
+        if (formValues) {
+            form.setFieldsValue({
+                ...formValues,
+                // Map keyword to search and vice versa
+                keyword: formValues.keyword || formValues.search,
+                // Ensure priceRange is properly initialized
+                priceRange: formValues.priceRange || [0.01, 200]
+            });
+
+            // Update drawer price range for mobile view
+            setDrawerPriceRange(formValues.priceRange || [0.01, 200]);
+        }
+    }, [form, formValues]);
+
+    const showDrawer = () => {
+        dispatch(toggleFilterVisibility());
+    };
+
+    const closeDrawer = () => {
+        dispatch(toggleFilterVisibility());
+    };
+
+    const handleResetFilter = () => {
+        form.resetFields();
+        dispatch(resetFilter());
+    };
+
+    const handleSubmit = (values: TFilterProduct) => {
+        // Ensure search and keyword both have values
+        if (values.keyword) {
+            values.search = values.keyword;
+        }
+
+        // Ensure price range is properly set
+        if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
+            values.minPrice = String(values.priceRange[0]);
+            values.maxPrice = String(values.priceRange[1]);
+        }
+
+        dispatch(updateFormValues(values));
+        dispatch(applyFilter());
+
+        // Close drawer if it's open
+        if (isFilterVisible) {
+            closeDrawer();
+        }
+    };
+
+    // Create filter summary for display
+    const filterSummary = [];
+
+    if (appliedFilters?.theme) {
+        filterSummary.push(`Theme: ${appliedFilters.theme}`);
     }
-  }, [form, formValues]);
 
-  // Handle opening and closing the mobile filter drawer
-  const showDrawer = () => {
-    dispatch(toggleFilterVisibility());
-  };
-
-  const closeDrawer = () => {
-    dispatch(toggleFilterVisibility());
-  };
-
-  const handleResetFilter = () => {
-    form.resetFields();
-    dispatch(resetFilter());
-  };
-
-  const handleSubmit = (values: TFilterProduct) => {
-    // Log tất cả giá trị trước khi xử lý
-    console.log('Filter handleSubmit received values:', JSON.stringify(values, null, 2));
-    
-    // Ensure price range is properly set
-    if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
-      // Make sure minPrice and maxPrice are also set based on priceRange
-      values.minPrice = String(values.priceRange[0]);
-      values.maxPrice = String(values.priceRange[1]);
-      console.log('Setting price range from form:', values.priceRange, 'min:', values.minPrice, 'max:', values.maxPrice);
+    if (appliedFilters?.tier) {
+        filterSummary.push(`Tier: ${appliedFilters.tier}`);
     }
-    
-    // Đảm bảo các giá trị sortTime và sortPrice được xử lý đúng
-    if (values.sortTime) {
-      console.log('Processing sortTime:', values.sortTime);
-    }
-    
-    if (values.sortPrice) {
-      console.log('Processing sortPrice:', values.sortPrice);
-    }
-    
-    // Create a copy of values to avoid reference issues
-    const processedValues = {...values};
-    
-    // @ts-ignore - Type mismatch can be safely ignored
-    dispatch(updateFormValues(processedValues));
-    
-    // Log state trước khi apply filter
-    console.log('About to apply filter with values:', processedValues);
-    
-    dispatch(applyFilter());
-    
-    // Close drawer if it's open
-    if (isFilterVisible) {
-      closeDrawer();
-    }
-  };
 
-  // Handle price range changes in drawer
-  const handleDrawerPriceRangeChange = (value: [number, number]) => {
-    form.setFieldsValue({ priceRange: value });
-  };
+    if (appliedFilters?.keyword) {
+        filterSummary.push(`Search: ${appliedFilters.keyword}`);
+    }
 
-  return (
-    <ConfigProvider theme={themeFilter}>
-      {/* Mobile filter button */}
-      <MobileFilterButton
-        type="primary" 
-        icon={<FilterOutlined />}
-        onClick={showDrawer}
-        block
-      >
-        Filter Products
-      </MobileFilterButton>
-      
-      {/* Desktop filter container */}
-      <DesktopFilterContainer>
-        <FilterHeader>
-          <FilterTitle>Filter Products</FilterTitle>
-        </FilterHeader>
-        
-        <FilterForm
-          form={form}
-          loading={loading}
-          onSubmit={handleSubmit}
-          onResetFilter={handleResetFilter}
-          onSearchChange={handleSearchChange}
-          // @ts-ignore - Type mismatch can be safely ignored
-          currentValues={formValues}
-        />
-      </DesktopFilterContainer>
-      
-      {/* Mobile filter drawer */}
-      <Drawer
-        title="Filter Products"
-        placement="right"
-        closable={true}
-        onClose={closeDrawer}
-        open={isFilterVisible}
-        width={320}
-      >
-        <Form
-          form={form}
-          onFinish={handleSubmit}
-          layout="vertical"
-          initialValues={formValues}
-        >
-          <Form.Item name="keyword" label="Search">
-            <Input
-              placeholder="Search products..."
-              onChange={handleSearchChange}
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-          
-          <Form.Item name="tier" label="Tier">
-            <Select placeholder="Select Tier" style={{ width: '100%' }}>
-              <Option value="">All Tiers</Option>
-              {/* We don't need to map tiers here as the form will be populated from state */}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="theme" label="Theme">
-            <Select placeholder="Select Theme" style={{ width: '100%' }}>
-              <Option value="">All Themes</Option>
-              {/* We don't need to map themes here as the form will be populated from state */}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="priceRange" label="Price Range">
-            <Slider
-              range
-              min={0}
-              max={200}
-              value={formValues.priceRange || [0, 200]}
-              onChange={(value: number | number[]) => {
-                if (Array.isArray(value) && value.length === 2) {
-                  handleDrawerPriceRangeChange(value as [number, number]);
+    if (appliedFilters?.priceRange && Array.isArray(appliedFilters.priceRange)) {
+        filterSummary.push(`Price: ${appliedFilters.priceRange[0]} - ${appliedFilters.priceRange[1]} ETH`);
+    }
+
+    const handleDrawerPriceRangeChange = (value: [number, number]) => {
+        setDrawerPriceRange(value);
+    };
+
+    return (
+        <>
+            {/* Mobile filter button */}
+            <Button
+                className={filterStyles.mobileFilterButton}
+                type="primary"
+                icon={<FilterOutlined/>}
+                onClick={showDrawer}
+                block
+            >
+                Filter Products
+            </Button>
+
+            {/* Desktop filter container */}
+            <div className={filterStyles.desktopFilterContainer}>
+                <ConfigProvider theme={themeFilter}>
+                    <FilterForm
+                        form={form}
+                        loading={loading}
+                        onSubmit={handleSubmit}
+                        onResetFilter={handleResetFilter}
+                        onSearchChange={handleSearchChange}
+                        currentValues={formValues}
+                    />
+                </ConfigProvider>
+            </div>
+
+            {/* Mobile filter drawer */}
+            <Drawer
+                title="Filter Products"
+                placement="right"
+                closable={true}
+                onClose={closeDrawer}
+                open={isFilterVisible}
+                width={320}
+                styles={{
+                    body: {
+                        padding: 16
+                    }
+                }}
+                footer={
+                    <div className={filterStyles.drawerFooter}>
+                        <Button onClick={handleResetFilter} icon={<ReloadOutlined/>}>
+                            Reset All
+                        </Button>
+                        <Button type="primary" onClick={() => form.submit()}>
+                            Apply Filters
+                        </Button>
+                    </div>
                 }
-              }}
-              tooltip={{ formatter: (value) => `$${value}` }}
-            />
-          </Form.Item>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
-            <Button onClick={handleResetFilter}>
-              Reset
-            </Button>
-            <Button type="primary" htmlType="submit">
-              Apply Filters
-            </Button>
-          </div>
-        </Form>
-      </Drawer>
-    </ConfigProvider>
-  );
+            >
+                <ConfigProvider theme={themeFilter}>
+                    <Form
+                        form={form}
+                        layout="vertical"
+                        onFinish={handleSubmit}
+                    >
+                        <Form.Item name="keyword" label="Search">
+                            <Input
+                                placeholder="Search products..."
+                                prefix={<SearchOutlined/>}
+                                onChange={handleSearchChange}
+                                allowClear
+                            />
+                        </Form.Item>
+
+                        <Form.Item label="Price Range">
+                            <Slider
+                                range
+                                min={0.01}
+                                max={200}
+                                value={drawerPriceRange}
+                                onChange={(value: any) => handleDrawerPriceRangeChange(value as [number, number])}
+                                onAfterChange={(value: any) => {
+                                    form.setFieldsValue({priceRange: value});
+                                }}
+                                tooltip={{formatter: value => `${value} ETH`}}
+                                styles={customSliderStyles}
+                            />
+                            <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 8}}>
+                                <span>{drawerPriceRange[0]} ETH</span>
+                                <span>{drawerPriceRange[1]} ETH</span>
+                            </div>
+                        </Form.Item>
+
+                        <Form.Item name="tier" label="Tier">
+                            <Select placeholder="Select tier" allowClear>
+                                <Option value="Free">Free</Option>
+                                <Option value="Basic">Basic</Option>
+                                <Option value="Premium">Premium</Option>
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item name="theme" label="Theme">
+                            <Select placeholder="Select theme" allowClear>
+                                <Option value="Light">Light</Option>
+                                <Option value="Dark">Dark</Option>
+                                <Option value="Colorful">Colorful</Option>
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item name="sortTime" label="Sort by Time">
+                            <Select placeholder="Select sort order" allowClear>
+                                <Option value="asc">Oldest First</Option>
+                                <Option value="desc">Newest First</Option>
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item name="sortPrice" label="Sort by Price">
+                            <Select placeholder="Select sort order" allowClear>
+                                <Option value="asc">Low to High</Option>
+                                <Option value="desc">High to Low</Option>
+                            </Select>
+                        </Form.Item>
+                    </Form>
+                </ConfigProvider>
+            </Drawer>
+        </>
+    );
 }
+
+export default FilterForm;

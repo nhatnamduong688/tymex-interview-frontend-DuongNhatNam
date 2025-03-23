@@ -91,19 +91,6 @@ vi.mock('@ant-design/icons', () => ({
   ReloadOutlined: () => <span data-testid="reload-icon" />
 }));
 
-// Mock styled-components
-vi.mock('styled-components', () => {
-  return {
-    default: {
-      div: () => (props) => <div {...props} />,
-      createGlobalStyle: () => () => null,
-    },
-    createGlobalStyle: () => () => null,
-    css: () => [],
-    keyframes: () => '',
-  }
-});
-
 // Mock enums
 vi.mock('../../../../enums/filter', () => ({
   ProductTheme: {

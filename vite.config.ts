@@ -11,5 +11,17 @@ export default defineConfig({
             '@core': path.resolve(__dirname, './src/core'),
             '@shared': path.resolve(__dirname, './src/shared'),
         }
+    },
+    css: {
+        modules: {
+            localsConvention: 'camelCase',
+            generateScopedName: '[name]__[local]___[hash:base64:5]',
+        },
+        preprocessorOptions: {
+            scss: {
+                // Thêm options cho scss nếu cần thiết
+                additionalData: `$injectedColor: orange;`
+            }
+        }
     }
 })

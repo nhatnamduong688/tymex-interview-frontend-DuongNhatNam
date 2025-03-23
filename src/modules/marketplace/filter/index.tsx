@@ -1,10 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Form, Drawer, Button, Input, Select, Slider } from 'antd';
-import { FilterOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
-import { ConfigProvider } from 'antd';
-import themeFilter from '../../../theme/themeFilterConfig';
+import { ConfigProvider, Form, Input, Select, Slider, Drawer, Button } from 'antd';
+import { CloseCircleFilled, FilterOutlined, SearchOutlined } from '@ant-design/icons';
+import themeFilter from '../../../shared/theme/themeFilterConfig';
 import { 
   updateFormValues,
   applyFilter,
@@ -12,64 +10,44 @@ import {
   toggleFilterVisibility
 } from '../../../store/slices/filterSlice';
 import { RootState } from '../../../store';
-import { FilterForm } from './FilterForm';
-import { useFilterLogic } from './useFilterLogic';
 import { TFilterProduct } from '../../../types/product';
+import { SortType } from '../../../enums/filter';
+import { useFilterLogic } from './useFilterLogic';
+import { formatPrice } from '../../../helpers/common';
+
+// Important: Order of imports matters for CSS!
+// 1. First import CSS variables
+import './scss/variables.css';
+// 2. Then import module styles
+import styles from './scss/Filter.module.scss';
 
 const { Option } = Select;
 
-// Styled components
-const FilterButton = styled(Button)`
-  margin-right: 16px;
-`;
+// Define options for tier, theme, and other selects
+const tierOptions = ['Basic', 'Premium'].map(tier => ({
+  label: tier,
+  value: tier,
+}));
 
-const FilterHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-`;
+const themeOptions = ['Dark', 'Light'].map(theme => ({
+  label: theme,
+  value: theme,
+}));
 
-const FilterTitle = styled.h2`
-  margin: 0;
-  font-size: 18px;
-  color: #333;
-`;
+const sortTimeOptions = [
+  { label: 'Latest', value: SortType.Descending },
+  { label: 'Earliest', value: SortType.Ascending }
+];
 
-const DesktopFilterContainer = styled.div`
-  background: #fff;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
-  
-  @media (max-width: 768px) {
-    display: none;
-  }
-`;
-
-const MobileFilterButton = styled(Button)`
-  margin-bottom: 16px;
-  
-  @media (min-width: 769px) {
-    display: none;
-  }
-`;
-
-const PriceRangeContainer = styled.div`
-  margin-bottom: 24px;
-`;
-
-const PriceInputsContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-`;
+const sortPriceOptions = [
+  { label: 'Low to high', value: SortType.Ascending },
+  { label: 'High to low', value: SortType.Descending }
+];
 
 export function Filter() {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
+  const [updateFilter, setUpdateFilter] = useState(false);
   
   // Get the current filter state from Redux
   const { formValues, appliedFilters, isFilterVisible } = useSelector((state: RootState) => state.filter);
@@ -78,16 +56,22 @@ export function Filter() {
   // Get filter logic handlers
   const { handleSearchChange } = useFilterLogic();
 
+  // Reset the form when component mounts
+  useEffect(() => {
+    // Apply initial values to form
+    form.resetFields();
+  }, []);
+
   // Match the form fields to the current Redux state when it changes
   useEffect(() => {
-    if (formValues) {
+    if (!updateFilter && formValues) {
       form.setFieldsValue({
         ...formValues,
-        // Ensure the keyword field shows the most recent value from either keyword or search
-        keyword: formValues.keyword || formValues.search
+        keyword: formValues.keyword || formValues.search,
+        priceRange: formValues.priceRange || [0.01, 200] // Ensure default values
       });
     }
-  }, [form, formValues]);
+  }, [form, formValues, updateFilter]);
 
   // Handle opening and closing the mobile filter drawer
   const showDrawer = () => {
@@ -100,39 +84,27 @@ export function Filter() {
 
   const handleResetFilter = () => {
     form.resetFields();
+    setUpdateFilter(true);
     dispatch(resetFilter());
   };
 
   const handleSubmit = (values: TFilterProduct) => {
-    // Log tất cả giá trị trước khi xử lý
-    console.log('Filter handleSubmit received values:', JSON.stringify(values, null, 2));
+    // Ensure search and keyword both have values
+    if (values.keyword) {
+      values.search = values.keyword;
+    }
     
     // Ensure price range is properly set
     if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
-      // Make sure minPrice and maxPrice are also set based on priceRange
       values.minPrice = String(values.priceRange[0]);
       values.maxPrice = String(values.priceRange[1]);
-      console.log('Setting price range from form:', values.priceRange, 'min:', values.minPrice, 'max:', values.maxPrice);
     }
-    
-    // Đảm bảo các giá trị sortTime và sortPrice được xử lý đúng
-    if (values.sortTime) {
-      console.log('Processing sortTime:', values.sortTime);
-    }
-    
-    if (values.sortPrice) {
-      console.log('Processing sortPrice:', values.sortPrice);
-    }
-    
+
     // Create a copy of values to avoid reference issues
     const processedValues = {...values};
     
-    // @ts-ignore - Type mismatch can be safely ignored
+    setUpdateFilter(true);
     dispatch(updateFormValues(processedValues));
-    
-    // Log state trước khi apply filter
-    console.log('About to apply filter with values:', processedValues);
-    
     dispatch(applyFilter());
     
     // Close drawer if it's open
@@ -141,39 +113,103 @@ export function Filter() {
     }
   };
 
-  // Handle price range changes in drawer
-  const handleDrawerPriceRangeChange = (value: [number, number]) => {
-    form.setFieldsValue({ priceRange: value });
+  // Properly initialize the form values, especially for the slider
+  const initialValues = {
+    ...formValues,
+    keyword: formValues?.keyword || formValues?.search || '',
+    priceRange: formValues?.priceRange || [0.01, 200]
   };
 
   return (
-    <ConfigProvider theme={themeFilter}>
+    <>
       {/* Mobile filter button */}
-      <MobileFilterButton
+      <Button
+        className={styles.mobileFilterButton}
         type="primary" 
         icon={<FilterOutlined />}
         onClick={showDrawer}
         block
       >
         Filter Products
-      </MobileFilterButton>
+      </Button>
       
       {/* Desktop filter container */}
-      <DesktopFilterContainer>
-        <FilterHeader>
-          <FilterTitle>Filter Products</FilterTitle>
-        </FilterHeader>
-        
-        <FilterForm
-          form={form}
-          loading={loading}
-          onSubmit={handleSubmit}
-          onResetFilter={handleResetFilter}
-          onSearchChange={handleSearchChange}
-          // @ts-ignore - Type mismatch can be safely ignored
-          currentValues={formValues}
-        />
-      </DesktopFilterContainer>
+      <div className={styles.desktopFilterContainer}>
+        <ConfigProvider theme={themeFilter}>
+          <Form
+            className={styles['container-filter']}
+            form={form}
+            labelCol={{ span: 24 }}
+            onFinish={handleSubmit}
+            initialValues={initialValues}
+          >
+            <Form.Item name="keyword">
+              <Input 
+                placeholder="Quick search" 
+                prefix={<SearchOutlined />} 
+                onChange={handleSearchChange}
+              />
+            </Form.Item>
+            
+            <Form.Item name="priceRange" label="Price">
+              <Slider
+                range
+                min={0.01}
+                max={200}
+                marks={{
+                  0.01: formatPrice(0.01),
+                  200: formatPrice(200),
+                }}
+              />
+            </Form.Item>
+            
+            <Form.Item name="tier" label="Tier">
+              <Select
+                options={tierOptions}
+                allowClear
+                placeholder="Select tier"
+              />
+            </Form.Item>
+            
+            <Form.Item name="theme" label="Theme">
+              <Select
+                options={themeOptions}
+                allowClear
+                placeholder="Select theme"
+              />
+            </Form.Item>
+            
+            <Form.Item name="sortTime" label="Time">
+              <Select
+                options={sortTimeOptions}
+                allowClear
+                placeholder="Sort by time"
+              />
+            </Form.Item>
+            
+            <Form.Item name="sortPrice" label="Price">
+              <Select
+                options={sortPriceOptions}
+                allowClear
+                placeholder="Sort by price"
+              />
+            </Form.Item>
+            
+            <div className="action-buttons">
+              <Button
+                type="text"
+                icon={<CloseCircleFilled />}
+                onClick={handleResetFilter}
+              >
+                Reset filter
+              </Button>
+              <Button htmlType="submit" type="primary">
+                Search
+              </Button>
+            </div>
+          </Form>
+        </ConfigProvider>
+      </div>
       
       {/* Mobile filter drawer */}
       <Drawer
@@ -183,60 +219,93 @@ export function Filter() {
         onClose={closeDrawer}
         open={isFilterVisible}
         width={320}
+        styles={{
+          body: {
+            padding: 0,
+            backgroundColor: 'var(--bg-dark)'
+          },
+          header: {
+            backgroundColor: 'var(--bg-dark)',
+            color: 'var(--text-color)',
+            borderBottom: '1px solid var(--border-color)'
+          }
+        }}
       >
-        <Form
-          form={form}
-          onFinish={handleSubmit}
-          layout="vertical"
-          initialValues={formValues}
-        >
-          <Form.Item name="keyword" label="Search">
-            <Input
-              placeholder="Search products..."
-              onChange={handleSearchChange}
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-          
-          <Form.Item name="tier" label="Tier">
-            <Select placeholder="Select Tier" style={{ width: '100%' }}>
-              <Option value="">All Tiers</Option>
-              {/* We don't need to map tiers here as the form will be populated from state */}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="theme" label="Theme">
-            <Select placeholder="Select Theme" style={{ width: '100%' }}>
-              <Option value="">All Themes</Option>
-              {/* We don't need to map themes here as the form will be populated from state */}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="priceRange" label="Price Range">
-            <Slider
-              range
-              min={0}
-              max={200}
-              defaultValue={formValues.priceRange || [0, 200]}
-              onChange={(value: number | number[]) => {
-                if (Array.isArray(value) && value.length === 2) {
-                  handleDrawerPriceRangeChange(value as [number, number]);
-                }
-              }}
-              tipFormatter={(value) => `$${value}`}
-            />
-          </Form.Item>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px' }}>
-            <Button onClick={handleResetFilter}>
-              Reset
-            </Button>
-            <Button type="primary" htmlType="submit">
-              Apply Filters
-            </Button>
-          </div>
-        </Form>
+        <ConfigProvider theme={themeFilter}>
+          <Form
+            className={styles['container-filter']}
+            form={form}
+            labelCol={{ span: 24 }}
+            onFinish={handleSubmit}
+            initialValues={initialValues}
+          >
+            <Form.Item name="keyword">
+              <Input 
+                placeholder="Quick search" 
+                prefix={<SearchOutlined />} 
+                onChange={handleSearchChange}
+              />
+            </Form.Item>
+            
+            <Form.Item name="priceRange" label="Price">
+              <Slider
+                range
+                min={0.01}
+                max={200}
+                marks={{
+                  0.01: formatPrice(0.01),
+                  200: formatPrice(200),
+                }}
+              />
+            </Form.Item>
+            
+            <Form.Item name="tier" label="Tier">
+              <Select
+                options={tierOptions}
+                allowClear
+                placeholder="Select tier"
+              />
+            </Form.Item>
+            
+            <Form.Item name="theme" label="Theme">
+              <Select
+                options={themeOptions}
+                allowClear
+                placeholder="Select theme"
+              />
+            </Form.Item>
+            
+            <Form.Item name="sortTime" label="Time">
+              <Select
+                options={sortTimeOptions}
+                allowClear
+                placeholder="Sort by time"
+              />
+            </Form.Item>
+            
+            <Form.Item name="sortPrice" label="Price">
+              <Select
+                options={sortPriceOptions}
+                allowClear
+                placeholder="Sort by price"
+              />
+            </Form.Item>
+            
+            <div className="action-buttons">
+              <Button
+                type="text"
+                icon={<CloseCircleFilled />}
+                onClick={handleResetFilter}
+              >
+                Reset filter
+              </Button>
+              <Button htmlType="submit" type="primary">
+                Search
+              </Button>
+            </div>
+          </Form>
+        </ConfigProvider>
       </Drawer>
-    </ConfigProvider>
+    </>
   );
 }

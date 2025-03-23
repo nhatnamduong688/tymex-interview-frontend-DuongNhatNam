@@ -106,10 +106,15 @@ vi.mock('@ant-design/icons', () => ({
   ReloadOutlined: () => <span data-testid="reload-icon" />
 }));
 
-// Mock styled-components
-vi.mock('styled-components', () => ({
+// Mock CSS modules
+vi.mock('./scss/FilterForm.module.scss', () => ({
   default: {
-    div: (props) => (args) => <div {...args} />,
+    formContainer: 'form-container-mock',
+    styledForm: 'styled-form-mock',
+    loadingSelect: 'loading-select-mock',
+    actionButtonsContainer: 'action-buttons-container-mock',
+    resetButton: 'reset-button-mock',
+    searchButton: 'search-button-mock'
   }
 }));
 

@@ -1,31 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Button, Select, Slider, Divider, Row, Col, Spin } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
+import { Form, Input, Button, Select, Slider, Spin } from 'antd';
+import { SearchOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { SortType } from '../../enums/filter';
 import { TFilterProduct } from '../../types/product';
 import { api } from '../../services/api';
+import { ethSliderStyles } from '../../../../styles/sliderStyles';
+
+// Important: Order of imports matters for CSS!
+// 1. First import CSS variables
+import './scss/variables.css';
+// 2. Then import module styles
+import styles from './scss/FilterForm.module.scss';
 
 const { Option } = Select;
-
-// Styled components
-const SliderContainer = styled.div`
-  padding: 0 10px;
-`;
-
-const FormFooter = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 24px;
-  gap: 12px;
-`;
-
-const LoadingSelect = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-`;
 
 const sortTimeOptions = [
   <Option key="asc" value={SortType.Ascending}>Oldest First</Option>,
@@ -76,9 +63,6 @@ export const FilterForm: React.FC<FilterFormProps> = ({
           response.data.map((product: any) => product.theme).filter(Boolean)
         )) as string[];
         
-        console.log("API TIERS (raw values):", uniqueTiers);
-        console.log("API THEMES (raw values):", uniqueThemes);
-        
         setTiers(uniqueTiers);
         setThemes(uniqueThemes);
       } catch (error) {
@@ -92,19 +76,16 @@ export const FilterForm: React.FC<FilterFormProps> = ({
   }, []);
 
   // Generate tier options from API data
-  const tierOptions = tiers.map(tier => {
-    console.log(`Creating tier option: ${tier}`);
-    return <Option key={tier} value={tier}>{tier}</Option>
-  });
+  const tierOptions = tiers.map(tier => (
+    <Option key={tier} value={tier}>{tier}</Option>
+  ));
 
   // Generate theme options from API data
-  const themeOptions = themes.map(theme => {
-    console.log(`Creating theme option: ${theme}`);
-    return <Option key={theme} value={theme}>{theme}</Option>
-  });
+  const themeOptions = themes.map(theme => (
+    <Option key={theme} value={theme}>{theme}</Option>
+  ));
 
   const handlePriceRangeChange = (newRange: [number, number]) => {
-    console.log('Price range changed:', newRange);
     form.setFieldsValue({ priceRange: newRange });
   };
 
@@ -118,143 +99,129 @@ export const FilterForm: React.FC<FilterFormProps> = ({
     if (values.priceRange && Array.isArray(values.priceRange) && values.priceRange.length === 2) {
       values.minPrice = String(values.priceRange[0]);
       values.maxPrice = String(values.priceRange[1]);
-      console.log('Setting price range:', values.priceRange, 'min:', values.minPrice, 'max:', values.maxPrice);
     }
-
-    // Log the form submission values with detailed type info
-    console.log('Form submitted with values:', JSON.stringify(values, null, 2));
-    console.log('Form tier value:', values.tier, 'of type', typeof values.tier);
-    console.log('Form theme value:', values.theme, 'of type', typeof values.theme);
-    console.log('Form sortTime value:', values.sortTime, 'of type', typeof values.sortTime);
-    console.log('Form sortPrice value:', values.sortPrice, 'of type', typeof values.sortPrice);
     
     onSubmit(values);
   };
-
-  // Log để debug giá trị priceRange và keyword/search
-  console.log('FilterForm currentValues:', currentValues);
-  console.log('keyword value:', form.getFieldValue('keyword'));
-  console.log('priceRange value:', form.getFieldValue('priceRange'));
-  console.log('tier value:', form.getFieldValue('tier'));
-  console.log('theme value:', form.getFieldValue('theme'));
-  console.log('sortTime value:', form.getFieldValue('sortTime'));
-  console.log('sortPrice value:', form.getFieldValue('sortPrice'));
+  
+  // Tạo marks cho slider
+  const sliderMarks = {
+    0.01: '0,01 ETH',
+    200: '200 ETH',
+  };
   
   // Update form when currentValues changes from Redux
   useEffect(() => {
-    console.log('FilterForm: Updating form with new values from Redux:', currentValues);
     form.setFieldsValue({
       ...currentValues,
       // Đảm bảo keyword được hiển thị từ cả search hoặc keyword
       keyword: currentValues.keyword || currentValues.search,
       // Đảm bảo các giá trị khác được cập nhật đúng
-      priceRange: currentValues.priceRange || [0, 200],
+      priceRange: currentValues.priceRange || [0.01, 200],
       sortTime: currentValues.sortTime || '',
       sortPrice: currentValues.sortPrice || ''
     });
   }, [currentValues, form]);
   
   return (
-    <Form
-      form={form}
-      name="filter_form"
-      layout="vertical"
-      onFinish={handleFinish}
-      initialValues={{
-        ...currentValues,
-        // Đảm bảo keyword được hiển thị từ cả search hoặc keyword
-        keyword: currentValues.keyword || currentValues.search
-      }}
-    >
-      <Form.Item name="keyword" label="Search">
-        <Input 
-          placeholder="Search products..." 
-          prefix={<SearchOutlined />} 
-          onChange={onSearchChange}
-          allowClear
-          // Sử dụng value thay vì defaultValue
-          value={currentValues.keyword || currentValues.search || ''}
-        />
-      </Form.Item>
+    <div className={styles.containerFilter}>
+      <Form
+        className={styles.styledForm}
+        form={form}
+        name="filter_form"
+        layout="vertical"
+        onFinish={handleFinish}
+        initialValues={{
+          ...currentValues,
+          keyword: currentValues.keyword || currentValues.search,
+          priceRange: [0.01, 200]
+        }}
+      >
+        <Form.Item name="keyword">
+          <Input 
+            placeholder="Quick search" 
+            prefix={<SearchOutlined />} 
+            onChange={onSearchChange}
+            allowClear
+          />
+        </Form.Item>
 
-      <Divider />
-
-      <Form.Item name="priceRange" label="Price Range">
-        <SliderContainer>
+        <Form.Item name="priceRange" label="Price">
           <Slider
             range
-            min={0}
+            min={0.01}
             max={200}
-            value={currentValues.priceRange || [0, 200]}
+            marks={sliderMarks}
+            value={currentValues.priceRange || [0.01, 200]}
             onChange={(value: number | number[]) => {
               if (Array.isArray(value) && value.length === 2) {
                 handlePriceRangeChange(value as [number, number]);
               }
             }}
-            tooltip={{ formatter: value => `$${value}` }}
+            tooltip={{ formatter: value => `${value} ETH` }}
+            styles={ethSliderStyles}
           />
-        </SliderContainer>
-      </Form.Item>
+        </Form.Item>
 
-      <Form.Item name="tier" label="Tier">
-        {isLoadingFilters ? (
-          <LoadingSelect>
-            <Spin size="small" /> <span style={{ marginLeft: 8 }}>Loading tiers...</span>
-          </LoadingSelect>
-        ) : (
-          <Select placeholder="Select tier" allowClear>
-            {tierOptions}
-          </Select>
-        )}
-      </Form.Item>
-
-      <Form.Item name="theme" label="Theme">
-        {isLoadingFilters ? (
-          <LoadingSelect>
-            <Spin size="small" /> <span style={{ marginLeft: 8 }}>Loading themes...</span>
-          </LoadingSelect>
-        ) : (
-          <Select placeholder="Select theme" allowClear>
-            {themeOptions}
-          </Select>
-        )}
-      </Form.Item>
-
-      <Divider />
-
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item name="sortTime" label="Sort by Time">
-            <Select placeholder="Sort by time" allowClear>
-              {sortTimeOptions}
+        <Form.Item name="tier" label="Tier">
+          {isLoadingFilters ? (
+            <div className={styles.loadingSelect}>
+              <Spin size="small" /> <span style={{ marginLeft: 8 }}>Loading tiers...</span>
+            </div>
+          ) : (
+            <Select 
+              placeholder="Select tier" 
+              allowClear
+            >
+              {tierOptions}
             </Select>
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="sortPrice" label="Sort by Price">
-            <Select placeholder="Sort by price" allowClear>
-              {sortPriceOptions}
-            </Select>
-          </Form.Item>
-        </Col>
-      </Row>
+          )}
+        </Form.Item>
 
-      <FormFooter>
-        <Button 
-          type="default" 
-          onClick={onResetFilter}
-          icon={<ReloadOutlined />}
-        >
-          Reset
-        </Button>
-        <Button 
-          type="primary" 
-          htmlType="submit"
-          loading={loading}
-        >
-          Apply Filters
-        </Button>
-      </FormFooter>
-    </Form>
+        <Form.Item name="theme" label="Theme">
+          {isLoadingFilters ? (
+            <div className={styles.loadingSelect}>
+              <Spin size="small" /> <span style={{ marginLeft: 8 }}>Loading themes...</span>
+            </div>
+          ) : (
+            <Select 
+              placeholder="Select theme" 
+              allowClear
+            >
+              {themeOptions}
+            </Select>
+          )}
+        </Form.Item>
+
+        <Form.Item name="sortTime" label="Time">
+          <Select placeholder="" allowClear>
+            {sortTimeOptions}
+          </Select>
+        </Form.Item>
+
+        <Form.Item name="sortPrice" label="Price">
+          <Select placeholder="" allowClear>
+            {sortPriceOptions}
+          </Select>
+        </Form.Item>
+
+        <div className="action-buttons">
+          <Button 
+            type="text" 
+            onClick={onResetFilter}
+            icon={<CloseCircleOutlined />}
+          >
+            Reset filter
+          </Button>
+          <Button 
+            type="primary" 
+            htmlType="submit"
+            loading={loading}
+          >
+            Search
+          </Button>
+        </div>
+      </Form>
+    </div>
   );
 }; 
