@@ -42,8 +42,8 @@ export const ApiDebugger: React.FC = () => {
     setErrorMessage(null);
     
     try {
-      const data = await productApi.getProducts({ useMockData });
-      setSampleData(data.slice(0, 3));
+      const response = await productApi.getProducts({});
+      setSampleData(response.data.slice(0, 3));
       setApiStatus('connected');
       setRetryCount(0);
     } catch (error) {

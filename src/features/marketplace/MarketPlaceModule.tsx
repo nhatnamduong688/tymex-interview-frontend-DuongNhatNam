@@ -14,6 +14,9 @@ const Container = styled.div`
   padding: 40px 20px;
   max-width: 1280px;
   margin: 0 auto;
+  background-color: transparent;
+  will-change: transform;
+  contain: content;
   
   @media (min-width: 992px) {
     padding: 60px 40px;

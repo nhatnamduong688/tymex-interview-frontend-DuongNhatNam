@@ -17,6 +17,8 @@ const GlobalStyles = createGlobalStyle`
     --mobile-header-height: ${props => props.theme.layout.mobileHeaderHeight};
     --heading-font: ${props => props.theme.fonts.heading};
     font-family: ${props => props.theme.fonts.body};
+    background-color: #242424; /* Thêm màu nền đồng nhất */
+    min-height: 100vh; /* Đảm bảo chiều cao tối thiểu */
   }
 
   .ant-btn {

@@ -15,6 +15,7 @@ const StyledProductList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  background-color: transparent;
 `;
 
 const SearchContainer = styled.div`
@@ -34,6 +35,9 @@ const ProductGrid = styled.div<{ $cols: number }>`
   display: grid;
   grid-template-columns: repeat(${props => props.$cols}, 1fr);
   gap: 16px;
+  background-color: #242424;
+  will-change: transform;
+  contain: content;
 `;
 
 const LoadMoreContainer = styled.div`
@@ -44,7 +48,7 @@ const LoadMoreContainer = styled.div`
 
 const NoResultsContainer = styled.div`
   padding: 24px;
-  background-color: #f9f9f9;
+  background-color: #242424;
   border-radius: 8px;
   text-align: center;
 `;
@@ -58,12 +62,13 @@ const ActiveFiltersContainer = styled.div`
 `;
 
 const FilterTag = styled.div`
-  background-color: #f0f0f0;
+  background-color: #333;
   padding: 4px 12px;
   border-radius: 16px;
   font-size: 14px;
   display: flex;
   align-items: center;
+  color: #ccc;
 `;
 
 const RetryButton = styled(Button)`
@@ -72,6 +77,7 @@ const RetryButton = styled(Button)`
 
 const ProductsContainer = styled.div`
   margin-top: 20px;
+  background-color: transparent;
 `;
 
 const EmptyContainer = styled.div`
@@ -80,6 +86,7 @@ const EmptyContainer = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 300px;
+  background-color: transparent;
 `;
 
 const FilterSummary = styled.div`
@@ -88,6 +95,7 @@ const FilterSummary = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  color: #ccc;
 `;
 
 const ClearFilters = styled.button`
@@ -112,7 +120,29 @@ const LoadMoreButton = styled(Button)`
 
 const TotalResults = styled.div`
   margin-bottom: 16px;
-  color: #666;
+  color: #ccc;
+`;
+
+// Thêm styled component mới để bọc StyledProductList
+const ProductListBackgroundWrapper = styled.div`
+  background-color: #242424; /* Luôn đảm bảo có nền */
+  min-height: 100vh; /* Luôn đủ cao để che phủ khi cuộn */
+  padding-bottom: 50px; /* Thêm padding để đảm bảo nền mở rộng xuống dưới */
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+  
+  /* Đảm bảo nền kéo dài khi có nhiều sản phẩm */
+  &:after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 200px; /* Mở rộng thêm nền xuống dưới */
+    background-color: #242424;
+    z-index: -1;
+  }
 `;
 
 export const ProductList = () => {
@@ -201,143 +231,149 @@ export const ProductList = () => {
 
   if (loading && !products.length) {
     return (
-      <EmptyContainer>
-        <Spin size="large" />
-        <div style={{ marginTop: 16 }}>Loading products...</div>
-      </EmptyContainer>
+      <ProductListBackgroundWrapper>
+        <EmptyContainer>
+          <Spin size="large" />
+          <div style={{ marginTop: 16, color: '#ccc' }}>Loading products...</div>
+        </EmptyContainer>
+      </ProductListBackgroundWrapper>
     );
   }
 
   if (error) {
     return (
-      <EmptyContainer>
-        <Empty
-          description={
-            <div>
-              <div>Error loading products: {error}</div>
-              <RetryButton type="primary" onClick={handleRetry}>
-                Retry
-              </RetryButton>
-            </div>
-          }
-        />
-      </EmptyContainer>
+      <ProductListBackgroundWrapper>
+        <EmptyContainer>
+          <Empty
+            description={
+              <div>
+                <div>Error loading products: {error}</div>
+                <RetryButton type="primary" onClick={handleRetry}>
+                  Retry
+                </RetryButton>
+              </div>
+            }
+          />
+        </EmptyContainer>
+      </ProductListBackgroundWrapper>
     );
   }
 
   return (
-    <StyledProductList>
-      <SearchContainer>
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={handleRetry}
-          loading={loading && !isFetchingNextPage}
-        >
-          Refresh
-        </Button>
-      </SearchContainer>
+    <ProductListBackgroundWrapper>
+      <StyledProductList>
+        <SearchContainer>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={handleRetry}
+            loading={loading && !isFetchingNextPage}
+          >
+            Refresh
+          </Button>
+        </SearchContainer>
 
-      {/* Error handling with retry option */}
-      {error && (
-        <Alert
-          message="Error Loading Products"
-          description={
-            <Space direction="vertical">
-              <Typography.Text>{error}</Typography.Text>
-              <RetryButton 
-                type="primary" 
-                icon={<ReloadOutlined />} 
-                onClick={handleRetry}
-              >
-                Retry Now
-              </RetryButton>
-            </Space>
-          }
-          type="error"
-          showIcon
-        />
-      )}
-
-      {/* Loading state */}
-      {loading && !isFetchingNextPage && !error && (
-        <ProductGrid $cols={getColumns()}>
-          {Array.from({ length: 8 }).map((_, index) => (
-            <Skeleton key={index} active paragraph={{ rows: 4 }} />
-          ))}
-        </ProductGrid>
-      )}
-
-      {/* Empty state with active filters */}
-      {!loading && !error && products.length === 0 && (
-        <NoResultsContainer>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
+        {/* Error handling with retry option */}
+        {error && (
+          <Alert
+            message="Error Loading Products"
             description={
-              <Typography.Text strong style={{ fontSize: '16px' }}>
-                No products found
-              </Typography.Text>
+              <Space direction="vertical">
+                <Typography.Text>{error}</Typography.Text>
+                <RetryButton 
+                  type="primary" 
+                  icon={<ReloadOutlined />} 
+                  onClick={handleRetry}
+                >
+                  Retry Now
+                </RetryButton>
+              </Space>
             }
+            type="error"
+            showIcon
           />
-          
-          {hasFilters && (
-            <>
-              <Typography.Text type="secondary" style={{ display: 'block', marginTop: '12px' }}>
-                No products match your current filters:
-              </Typography.Text>
-              
-              <ActiveFiltersContainer>
-                {activeFilters.map((filter, index) => (
-                  <FilterTag key={index}>
-                    {filter}
-                  </FilterTag>
-                ))}
-              </ActiveFiltersContainer>
-              
-              <ClearFilters onClick={handleClearFilters}>Clear filters</ClearFilters>
-            </>
-          )}
-        </NoResultsContainer>
-      )}
+        )}
 
-      {/* Product grid */}
-      {!loading && !error && products.length > 0 && (
-        <>
-          <ProductsContainer>
+        {/* Loading state */}
+        {loading && !isFetchingNextPage && !error && (
+          <ProductGrid $cols={getColumns()}>
+            {Array.from({ length: 8 }).map((_, index) => (
+              <Skeleton key={index} active paragraph={{ rows: 4 }} />
+            ))}
+          </ProductGrid>
+        )}
+
+        {/* Empty state with active filters */}
+        {!loading && !error && products.length === 0 && (
+          <NoResultsContainer>
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <Typography.Text strong style={{ fontSize: '16px', color: '#ccc' }}>
+                  No products found
+                </Typography.Text>
+              }
+            />
+            
             {hasFilters && (
-              <FilterSummary>
-                <div>Active filters: </div>
-                {activeFilters.map((filter, index) => (
-                  <FilterTag key={index}>{filter}</FilterTag>
-                ))}
-                <ClearFilters onClick={handleClearFilters}>Clear all</ClearFilters>
-              </FilterSummary>
+              <>
+                <Typography.Text type="secondary" style={{ display: 'block', marginTop: '12px', color: '#aaa' }}>
+                  No products match your current filters:
+                </Typography.Text>
+                
+                <ActiveFiltersContainer>
+                  {activeFilters.map((filter, index) => (
+                    <FilterTag key={index}>
+                      {filter}
+                    </FilterTag>
+                  ))}
+                </ActiveFiltersContainer>
+                
+                <ClearFilters onClick={handleClearFilters}>Clear filters</ClearFilters>
+              </>
             )}
+          </NoResultsContainer>
+        )}
 
-            <TotalResults>
-              Showing {products.length} of {totalCount} products
-            </TotalResults>
+        {/* Product grid */}
+        {!loading && !error && products.length > 0 && (
+          <>
+            <ProductsContainer>
+              {hasFilters && (
+                <FilterSummary>
+                  <div style={{ color: '#ccc' }}>Active filters: </div>
+                  {activeFilters.map((filter, index) => (
+                    <FilterTag key={index}>{filter}</FilterTag>
+                  ))}
+                  <ClearFilters onClick={handleClearFilters}>Clear all</ClearFilters>
+                </FilterSummary>
+              )}
 
-            <ProductGrid $cols={getColumns()}>
-              {products.map((product: TProduct) => (
-                <ProductCart key={product.id} product={product} />
-              ))}
-            </ProductGrid>
-          </ProductsContainer>
+              <TotalResults>
+                Showing {products.length} of {totalCount} products
+              </TotalResults>
 
-          {hasMore && (
-            <LoadMoreContainer>
-              <LoadMoreButton 
-                type="primary" 
-                loading={isFetchingNextPage}
-                onClick={loadMore}
-                disabled={isFetchingNextPage}
-              >
-                {isFetchingNextPage ? 'Loading more...' : 'Load More'}
-              </LoadMoreButton>
-            </LoadMoreContainer>
-          )}
-        </>
-      )}
-    </StyledProductList>
+              <ProductGrid $cols={getColumns()}>
+                {products.map((product: TProduct) => (
+                  <ProductCart key={product.id} product={product} />
+                ))}
+              </ProductGrid>
+            </ProductsContainer>
+
+            {hasMore && (
+              <LoadMoreContainer>
+                <LoadMoreButton 
+                  type="primary" 
+                  loading={isFetchingNextPage}
+                  onClick={loadMore}
+                  disabled={isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? 'Loading more...' : 'Load More'}
+                </LoadMoreButton>
+              </LoadMoreContainer>
+            )}
+          </>
+        )}
+      </StyledProductList>
+    </ProductListBackgroundWrapper>
   );
 }; 

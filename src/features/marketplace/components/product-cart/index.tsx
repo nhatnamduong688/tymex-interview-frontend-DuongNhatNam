@@ -16,6 +16,8 @@ const CardContainer = styled.div`
   height: 365px;
   position: relative;
   transition: transform 0.2s ease-in-out;
+  will-change: transform;
+  contain: content;
   
   &:hover {
     transform: translateY(-8px);
@@ -33,6 +35,7 @@ const BackgroundImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  background-color: #1f2432;
 `;
 
 const ItemImage = styled.img`
