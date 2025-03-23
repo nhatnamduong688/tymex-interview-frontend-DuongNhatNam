@@ -1,55 +1,38 @@
 import { useEffect, useCallback } from 'react';
-import { TProduct } from '../../types/product';
-import { useSelector, useDispatch } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '../../../../shared/hooks';
 import { RootState } from '../../store';
 import { fetchProducts, fetchMoreProducts } from '../../store/productsSlice';
 
-/**
- * @deprecated This hook is deprecated in favor of direct Redux usage.
- * Please use Redux actions and selectors directly instead.
- */
-interface UseProductReturn {
-  dataProduct: TProduct[];
+export interface UseProductResult {
+  dataProduct: any[];
   hasMore: boolean;
   fetchNextPage: () => void;
   isLoading: boolean;
   isFetchingNextPage: boolean;
-  isError: boolean;
-  error: Error | null;
 }
 
-/**
- * @deprecated This hook is deprecated in favor of direct Redux usage.
- * Please use useSelector and useDispatch with products slice instead.
- */
-export const useProductList = (): UseProductReturn => {
-  console.warn(
-    'useProduct hook is deprecated. Please use Redux directly with useSelector and useDispatch.'
-  );
-  
-  const dispatch = useDispatch();
+export const useProduct = (): UseProductResult => {
+  const dispatch = useAppDispatch();
   
   // Get data from Redux
   const { 
     data: dataProduct, 
     loading: isLoading, 
-    error, 
     hasMore,
     isFetchingNextPage
-  } = useSelector((state: RootState) => state.products);
+  } = useAppSelector((state: RootState) => state.products);
   
-  const appliedFilters = useSelector((state: RootState) => state.filter.appliedFilters);
+  const { appliedFilters } = useAppSelector((state: RootState) => state.filter);
   
   // Load first page of products when filters change
   useEffect(() => {
-    // @ts-ignore - The type error is related to the thunk action, can be safely ignored
-    dispatch(fetchProducts(appliedFilters));
-  }, [dispatch, JSON.stringify(appliedFilters)]);
+    console.log("Fetching products with filters:", appliedFilters);
+    dispatch(fetchProducts());
+  }, [dispatch, appliedFilters]);
 
   // Load more products
-  const loadMore = useCallback(() => {
+  const fetchNextPage = useCallback(() => {
     if (!isLoading && hasMore) {
-      // @ts-ignore - The type error is related to the thunk action, can be safely ignored
       dispatch(fetchMoreProducts());
     }
   }, [dispatch, isLoading, hasMore]);
@@ -57,10 +40,8 @@ export const useProductList = (): UseProductReturn => {
   return {
     dataProduct,
     hasMore,
-    fetchNextPage: loadMore,
+    fetchNextPage,
     isLoading,
-    isFetchingNextPage,
-    isError: !!error,
-    error: error ? new Error(error) : null
+    isFetchingNextPage
   };
 }; 

@@ -8,8 +8,33 @@ import { RootState } from '../../../store';
 import { updateCategory } from '../../../store/slices/filterSlice';
 import { ProductCategory } from '../../../enums/filter';
 
+// Using styled-components to achieve the same styling as the provided CSS module
 const ProductCategoriesContainer = styled.div`
   margin-bottom: 24px;
+  
+  .ant-btn {
+    border: none;
+    color: #fff !important;
+
+    span {
+      font-size: 16px !important;
+    }
+
+    &-lg {
+      padding: 10px 16px;
+    }
+
+    &-default {
+      background: linear-gradient(
+        91.47deg,
+        rgb(218 69 143 / 40%) -6%,
+        rgb(218 52 221 / 40%) 113.05%
+      ) !important;
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
 `;
 
 export const TagCategories = () => {
