@@ -1,1 +1,0 @@
-export { MarketPlaceModule } from './MarketPlaceModule'; 

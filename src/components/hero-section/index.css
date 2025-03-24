@@ -1,0 +1,111 @@
+.hero-section {
+  position: relative;
+  background-image: url(/images/bg-banner.jpeg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  padding-top: 80px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bg-title {
+  padding-left: 50px;
+  padding-right: 50px;
+}
+
+.bg-title img{
+  height: 100px;
+}
+
+
+.bg-list-nft {
+  display: flex;
+  width: 100%;
+  padding-top: 63px;
+}
+
+.bg-list-nft img {
+  height: 100px;
+}
+
+.bg-dj {
+  position: absolute;
+  right: 50px;
+  bottom: 0;
+  display: flex;
+}
+
+.bg-dj img {
+  height: 150px;
+}
+
+@media screen and (min-width: 650px) {
+  .hero-section {
+    padding-top: 100px;
+  }
+  
+  .bg-title {
+    padding-left: 150px;
+    padding-right: 150px;
+  }
+  
+  .bg-title img {
+    height: auto;
+  }
+
+  .bg-list-nft img {
+   height: 150px;
+  }
+
+  .bg-dj {
+    max-width: 400px;
+    right: 50px;
+  }
+
+  .bg-dj img {
+    height: 350px;
+  }
+}
+
+@media screen and (min-width: 1280px) {
+  .hero-section {
+    padding-top: 149px;
+  }
+
+  .bg-title {
+    max-width: 1093px;
+    padding-left: 160px;
+    padding-right: 160px;
+  }
+  
+  .bg-title img {
+    height: auto;
+  }
+  
+  .bg-list-nft img {
+   height: 248px;
+  }
+
+  .bg-dj {
+    max-width: 400px;
+    right: 100px;
+  }
+
+  .bg-dj img {
+    height: 550px;
+  }
+}
+
+@media screen and (min-width: 1900px) {
+  .hero-section {
+    padding-top: 290px;
+  }
+  .bg-dj {
+    right: 160px;
+    max-width: none;
+  }  
+
+  .bg-dj img {
+    height: 655px;
+  }
+}

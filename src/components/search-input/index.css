@@ -1,0 +1,10 @@
+.search-input {
+  position: relative;
+}
+
+.search-input-icon {
+  position: absolute;
+  right: 16px;
+  top: 10px;
+  cursor: pointer;
+}

@@ -1,0 +1,69 @@
+.range {
+  margin: 0 12px;
+}
+
+.rc-slider-rail {
+  border-radius: 2px;
+  background: rgba(58, 56, 65, 1);
+  height: 8px;
+}
+
+.rc-slider-track {
+  border-radius: 2px;
+  background: linear-gradient(91.27deg, rgba(218, 69, 143, 0) 0.55%, #DA41A2 24.03%, #DA37CE 83.19%, rgba(218, 52, 221, 0) 102.8%);
+  height: 8px;
+}
+
+.rc-slider-handle {
+  border-radius: 9999px;
+  background: url(../../../public/icons//dot.svg);
+  background-size: cover;
+  background-repeat: no-repeat;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 1);
+}
+
+.rc-slider-handle:hover,
+.rc-slider-handle:focus,
+.rc-slider-handle:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 1);
+}
+
+.rc-slider-handle-dragging{
+  border: 1px solid rgba(255, 255, 255, 1) !important;
+  box-shadow: none !important;
+}
+
+.range-title {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 1);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.rc-slider-handle-2 {
+  position: relative;
+  bottom: 2px;
+}
+
+.rc-slider-tooltip-inner {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 1);
+  background: linear-gradient(91.47deg, #DA458F -6%, #DA34DD 113.05%);
+  border-radius: 4px;
+  padding: 2px 16px;
+}
+
+.rc-slider-tooltip-placement-top .rc-slider-tooltip-arrow {
+  margin-left: -5px;
+  border-width: 10px 7px 0;
+  border-top-color: #DA37CB;
+}

@@ -1,0 +1,60 @@
+.hambuger {
+  position: absolute;
+  top: 6px;
+  left: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.hambuger svg {
+  fill-rule: evenodd;
+  clip-rule: evenodd;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-miterlimit: 1.5;
+  cursor: pointer;
+}
+
+.hambuger svg path {
+  fill: none;
+  stroke: #FFFFFF;
+  stroke-width: 2px;
+}
+
+.hambuger svg + svg {
+  margin-left: 1.5rem;
+}
+
+.hambuger #top,
+.hambuger #bottom {
+  stroke-dasharray: 30, 75.39;
+  transition: all 0.6s cubic-bezier(0.6, 0.33, 0.67, 1.29);
+}
+
+.hambuger svg.active #top,
+.hambuger svg.active #bottom {
+  stroke-dashoffset: -60;
+}
+
+.hambuger svg:nth-child(2) {
+  transform: rotate(0deg);
+  transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.hambuger svg:nth-child(2) path {
+  transition: all 0.4s ease-in-out 0.6s;
+}
+
+.hambuger svg:nth-child(2).active {
+  transform: rotate(180deg);
+}
+
+
+@media screen and (min-width: 1280px) {
+  .hambuger {
+    display: none;
+  }
+}
+
