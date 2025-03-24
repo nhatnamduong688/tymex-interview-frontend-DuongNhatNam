@@ -94,6 +94,40 @@ npm run test
 npm run test:watch
 ```
 
+## 📊 Test Coverage
+
+The project has extensive test coverage with Jest and React Testing Library. Current test coverage metrics:
+
+- **Overall Coverage**: 94.08%
+- **Statements**: 94.08%
+- **Branches**: 76.19%
+- **Functions**: 87.5%
+- **Lines**: 94.83%
+
+### Tested Components
+
+The test suite includes comprehensive tests for various components:
+
+- UI Components: Button, Input, Icon, Layout, Product, ListProducts, QuickFilters, Range, SearchInput
+- Hooks: useDebounce, useConnectWallet
+- Complex components with API interactions using React Query
+
+### Testing Approach
+
+Tests are designed to verify:
+
+- Component rendering and structure
+- User interactions (clicks, inputs, etc.)
+- State management and updates
+- Component integration with providers
+- Responsiveness to prop changes
+
+To run tests with coverage report:
+
+```bash
+npm test -- --coverage
+```
+
 ## 📚 Project Structure
 
 ```
