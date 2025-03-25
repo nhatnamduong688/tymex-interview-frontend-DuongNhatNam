@@ -79,11 +79,6 @@
     flex-direction: row;
     margin-top: 0;
   }
-
-  /* Thêm padding-top cho body để tránh header che phần nội dung */
-  body {
-    padding-top: 90px;
-  }
 }
 
 @media screen and (min-width: 1900px) {

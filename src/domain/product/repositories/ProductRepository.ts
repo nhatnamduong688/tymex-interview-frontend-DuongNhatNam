@@ -23,7 +23,8 @@ export type ProductSortOption =
   | 'name_asc' 
   | 'name_desc' 
   | 'newest' 
-  | 'popularity';
+  | 'popularity'
+  | 'relevance';
 
 /**
  * Pagination parameters

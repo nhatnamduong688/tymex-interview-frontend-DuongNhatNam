@@ -36,11 +36,15 @@ export const formatDate = (
 ): string => {
   const dateObj = date instanceof Date ? date : new Date(date);
   
-  const options: Intl.DateTimeFormatOptions = {
-    short: { month: 'numeric', day: 'numeric', year: '2-digit' },
-    medium: { month: 'short', day: 'numeric', year: 'numeric' },
-    long: { month: 'long', day: 'numeric', year: 'numeric' },
-  }[format];
+  let options: Intl.DateTimeFormatOptions;
+  
+  if (format === 'short') {
+    options = { month: 'numeric', day: 'numeric', year: '2-digit' };
+  } else if (format === 'medium') {
+    options = { month: 'short', day: 'numeric', year: 'numeric' };
+  } else {
+    options = { month: 'long', day: 'numeric', year: 'numeric' };
+  }
   
   return new Intl.DateTimeFormat(locale, options).format(dateObj);
 };

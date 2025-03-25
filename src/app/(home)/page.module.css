@@ -7,13 +7,35 @@
   --button-secondary-hover: #f2f2f2;
 
   display: grid;
-  grid-template-rows: 20px 1fr 20px;
+  grid-template-rows: auto 1fr auto;
   align-items: center;
-  justify-items: center;
-  min-height: 100svh;
-  padding: 80px;
-  gap: 64px;
+  min-height: 100vh;
+  padding: 0;
   font-family: var(--font-geist-sans);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #fff;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.page::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-image: url('/images/bg-overall.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.15;
+  z-index: 0;
+}
+
+.pageContent {
+  z-index: 1;
+  position: relative;
+  width: 100%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,7 +53,10 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
-  grid-row-start: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 120px 32px 64px 32px;
+  width: 100%;
 }
 
 .main ol {
@@ -59,53 +84,142 @@
 .ctas {
   display: flex;
   gap: 16px;
+  margin-top: 24px;
 }
 
 .ctas a {
   appearance: none;
-  border-radius: 128px;
+  border-radius: 8px;
   height: 48px;
-  padding: 0 20px;
+  padding: 0 24px;
   border: none;
   border: 1px solid transparent;
-  transition:
-    background 0.2s,
-    color 0.2s,
-    border-color 0.2s;
+  transition: all 0.2s ease;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
   line-height: 20px;
-  font-weight: 500;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+
+.ctas a::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.7s;
+}
+
+.ctas a:hover::before {
+  left: 100%;
 }
 
 a.primary {
-  background: var(--foreground);
-  color: var(--background);
+  background: #3b82f6;
+  color: white;
   gap: 8px;
 }
 
+a.primary:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
 a.secondary {
-  border-color: var(--gray-alpha-200);
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  color: white;
   min-width: 180px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+a.secondary:hover {
+  background: rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .footer {
-  grid-row-start: 3;
   display: flex;
   gap: 24px;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(10px);
+  width: 100%;
 }
 
 .footer a {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.footer a:hover {
+  color: #fff;
 }
 
 .footer img {
   flex-shrink: 0;
+}
+
+/* Card styles */
+.card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 32px;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  border-color: rgba(255,255,255,0.2);
+}
+
+/* Section styles */
+.section {
+  margin-bottom: 64px;
+}
+
+.section h2 {
+  font-size: 2rem;
+  margin-bottom: 24px;
+  position: relative;
+  display: inline-block;
+}
+
+.section h2::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 60px;
+  height: 4px;
+  background: #3b82f6;
+  border-radius: 2px;
+}
+
+/* Gradient text */
+.gradientText {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
 }
 
 /* Enable hover only on non-touch devices */
@@ -126,10 +240,13 @@ a.secondary {
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .page {
-    padding: 32px;
-    padding-bottom: 80px;
+    padding: 0;
+  }
+
+  .main {
+    padding: 100px 24px 48px 24px;
   }
 
   .main {
@@ -142,12 +259,13 @@ a.secondary {
 
   .ctas {
     flex-direction: column;
+    width: 100%;
   }
 
   .ctas a {
     font-size: 14px;
-    height: 40px;
-    padding: 0 16px;
+    height: 44px;
+    width: 100%;
   }
 
   a.secondary {
@@ -158,6 +276,11 @@ a.secondary {
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
+    padding: 24px 16px;
+  }
+  
+  .section {
+    margin-bottom: 48px;
   }
 }
 

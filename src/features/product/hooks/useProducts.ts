@@ -7,9 +7,10 @@ import {
   ProductSortOption 
 } from '../../../domain/product/repositories/ProductRepository';
 import { Product } from '../../../domain/product/entities/Product';
+import { apiClient } from '../../../infrastructure/api/client';
 
 // Create the repository instance
-const productRepository = new ProductApiRepository();
+const productRepository = new ProductApiRepository(apiClient);
 
 /**
  * Hook for fetching a paginated list of products
