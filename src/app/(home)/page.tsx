@@ -1,8 +1,5 @@
-import { Section } from '@/components/section';
+import { redirect } from 'next/navigation';
+
 export default function Home() {
-  return (
-    <Section>
-      <h1>This is Home Page</h1>
-    </Section>
-  );
+  redirect('/marketplace');
 }

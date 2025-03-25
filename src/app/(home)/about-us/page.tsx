@@ -64,8 +64,8 @@ export default function AboutUs() {
               <Image 
                 src="/images/about-us-mission.jpg" 
                 alt="Tymex Mission" 
-                width={300}
-                height={200}
+                width={150}
+                height={100}
                 className="rounded-lg w-full h-auto object-cover relative z-10"
               />
               <div className="absolute bottom-4 right-4 bg-black/70 px-4 py-2 rounded text-sm text-gray-300 z-20">
@@ -130,8 +130,8 @@ export default function AboutUs() {
               <Image 
                 src="/images/about-us-story.jpg" 
                 alt="Tymex Story" 
-                width={300}
-                height={200}
+                width={150}
+                height={100}
                 className="rounded-lg w-full h-auto object-cover relative z-10"
               />
               <div className="absolute bottom-4 left-4 bg-black/70 px-4 py-2 rounded text-sm text-gray-300 z-20">

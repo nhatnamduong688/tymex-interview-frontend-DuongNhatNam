@@ -22,8 +22,8 @@ export default function Roadmap() {
                 <Image 
                   src="/images/roadmap-main.jpg" 
                   alt="Tymex Roadmap" 
-                  width={300}
-                  height={200}
+                  width={150}
+                  height={100}
                   className="rounded-lg w-full h-auto mb-8 object-cover"
                 />
                 <h2 className="text-2xl font-bold mb-4 text-white">Tymex Development Journey</h2>

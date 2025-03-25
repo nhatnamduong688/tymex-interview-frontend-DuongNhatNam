@@ -88,8 +88,8 @@ export default function OurTeams() {
                 <Image 
                   src="/images/team/leadership-team.jpg" 
                   alt="Tymex Leadership Team" 
-                  width={300}
-                  height={200}
+                  width={150}
+                  height={100}
                   className="rounded-lg object-cover shadow-2xl"
                 />
               </div>
@@ -102,8 +102,8 @@ export default function OurTeams() {
                   <Image 
                     src="/images/team/ceo.jpg" 
                     alt="Sarah Johnson - CEO" 
-                    width={200}
-                    height={200}
+                    width={100}
+                    height={100}
                     className="w-full h-auto object-cover aspect-square"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
@@ -134,8 +134,8 @@ export default function OurTeams() {
                   <Image 
                     src="/images/team/cto.jpg" 
                     alt="Michael Chen - CTO" 
-                    width={200}
-                    height={200}
+                    width={100}
+                    height={100}
                     className="w-full h-auto object-cover aspect-square"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
@@ -166,8 +166,8 @@ export default function OurTeams() {
                   <Image 
                     src="/images/team/coo.jpg" 
                     alt="Alex Rodriguez - COO" 
-                    width={200}
-                    height={200}
+                    width={100}
+                    height={100}
                     className="w-full h-auto object-cover aspect-square"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
@@ -213,8 +213,8 @@ export default function OurTeams() {
                 <Image 
                   src="/images/team/advisory-board.jpg" 
                   alt="Tymex Advisory Board" 
-                  width={300}
-                  height={200}
+                  width={150}
+                  height={100}
                   className="rounded-lg object-cover shadow-2xl"
                 />
               </div>
@@ -227,8 +227,8 @@ export default function OurTeams() {
                   <Image 
                     src="/images/team/advisor-1.jpg" 
                     alt="Dr. Emma Patel" 
-                    width={180}
-                    height={180}
+                    width={90}
+                    height={90}
                     className="w-full h-auto object-cover aspect-square"
                   />
                 </div>
@@ -244,8 +244,8 @@ export default function OurTeams() {
                   <Image 
                     src="/images/team/advisor-2.jpg" 
                     alt="James Wilson" 
-                    width={180}
-                    height={180}
+                    width={90}
+                    height={90}
                     className="w-full h-auto object-cover aspect-square"
                   />
                 </div>
@@ -261,8 +261,8 @@ export default function OurTeams() {
                   <Image 
                     src="/images/team/advisor-3.jpg" 
                     alt="Sophia Kim" 
-                    width={180}
-                    height={180}
+                    width={90}
+                    height={90}
                     className="w-full h-auto object-cover aspect-square"
                   />
                 </div>
@@ -278,8 +278,8 @@ export default function OurTeams() {
                   <Image 
                     src="/images/team/advisor-4.jpg" 
                     alt="David Martinez" 
-                    width={180}
-                    height={180}
+                    width={90}
+                    height={90}
                     className="w-full h-auto object-cover aspect-square"
                   />
                 </div>
