@@ -17,13 +17,15 @@
   height: 100vh;
   padding: 50px 30px 30px 30px;
   background: rgba(23, 22, 26, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transform: translateX(-300px);
   transition: transform 0.3s ease-in-out;
 }
 
 .header nav ul {
   display: flex;
-  justify-content: start;
+  justify-content: flex-start;
   flex-direction: column;
   gap: 40px;
 }
@@ -48,6 +50,10 @@
 @media screen and (min-width: 1280px) {
   .header {
     width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
   }
   
   .header nav {
@@ -56,14 +62,27 @@
     height: auto;
     padding: 30px 100px 30px 100px;
     transform: unset;
+    background: rgba(23, 22, 26, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: static;
+    width: 100%;
   }
+  
   .header nav ul {
     flex-direction: row;
     gap: 60px;
   }
+  
   .wallet-group {
     flex-direction: row;
     margin-top: 0;
+  }
+
+  /* Thêm padding-top cho body để tránh header che phần nội dung */
+  body {
+    padding-top: 90px;
   }
 }
 
