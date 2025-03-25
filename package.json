@@ -1,37 +1,42 @@
 {
-  "name": "tymex-interview-frontend-duongnhatnam",
   "version": "0.1.0",
+  "name": "tymex-interview-frontend-duongnhatnam",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
     "start": "next start",
+    "build": "next build",
     "lint": "next lint",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "dev": "next dev",
+    "test:watch": "jest --watch",
+    "test": "jest"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.62.7",
-    "axios": "^1.7.9",
-    "next": "15.0.4",
-    "rc-slider": "^11.1.7",
-    "rc-tooltip": "^6.3.1",
     "react": "^18.2.0",
+    "next": "15.0.4",
+    "redux-saga": "^1.3.0",
     "react-dom": "^18.2.0",
+    "redux": "^5.0.1",
+    "react-loader-spinner": "^6.1.6",
+    "react-redux": "^9.2.0",
     "react-hook-form": "^7.54.0",
-    "react-loader-spinner": "^6.1.6"
+    "@tanstack/react-query": "^5.62.7",
+    "redux-thunk": "^3.1.0",
+    "rc-tooltip": "^6.3.1",
+    "rc-slider": "^11.1.7",
+    "@reduxjs/toolkit": "^2.6.1",
+    "axios": "^1.7.9"
   },
   "devDependencies": {
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.2.0",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "eslint": "^8",
-    "eslint-config-next": "15.0.4",
+    "typescript": "^5",
     "jest-environment-jsdom": "^29.7.0",
-    "typescript": "^5"
+    "eslint-config-next": "15.0.4",
+    "@types/react-dom": "^18",
+    "@types/react": "^18",
+    "eslint": "^8",
+    "@types/node": "^20",
+    "@testing-library/user-event": "^14.6.1",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/dom": "^10.4.0"
   }
 }

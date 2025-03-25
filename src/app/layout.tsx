@@ -31,6 +31,18 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        {/* 
+          Để kích hoạt Redux cho toàn bộ ứng dụng, hãy bỏ comment đoạn mã bên dưới và import ReduxProviders.
+          
+          import { ReduxProviders } from '@/redux/providers';
+          
+          Sau đó thay thế phần body như sau:
+          <body className={inter.className}>
+            <ReduxProviders>
+              {children}
+            </ReduxProviders>
+          </body>
+        */}
         <ReactQueryProvider>{children}</ReactQueryProvider>
       </body>
     </html>
